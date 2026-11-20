@@ -57,7 +57,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <h3>3) Surplus Funds - Owner Info Sheet</h3><input id="suOwner" placeholder="Former Owner Name"><input id="suCase" placeholder="Case #"><input id="suAddr" placeholder="Property Address"><input id="suAmt" type="number" placeholder="Estimated Surplus $"><button class="btn green" onclick="genContract('surplus')">Generate Surplus Info Sheet</button><div id="ctOut3" class="greenBox hidden" style="margin-top:10px"></div>
 </div>
 <div id="view-scripts" class="panel hidden"><h2>Call Scripts</h2><div class="card" style="margin-bottom:10px"><b>Cold Owner</b><p class="small">Hi, I'm Earl with RealDealsPro. I saw your property on [Address] and wanted to check if you'd ever consider selling for cash, as-is, no repairs. Would that be something you'd be open to talking about for 2 minutes?</p></div><div class="card" style="margin-bottom:10px"><b>Hot Owner</b><p class="small">Hi, I'm Earl. We flagged your property because of equity and tax signals. I can make a fair cash offer and close on your timeline. Is it okay if I ask a couple quick questions about the condition?</p></div><div class="card" style="margin-bottom:10px"><b>Surplus Funds Owner</b><p class="small">Hi, I'm Earl with RealDealsPro. After the foreclosure sale on [Address], there may have been surplus funds left over that belong to you as the former owner. I help people check if they have funds held by the Clerk and understand the claim deadline. Would you like me to check your case number for you? This is general info, not legal advice.</p></div><div class="card"><b>Investor / Buyer</b><p class="small">Hi, I have a new off-market deal in [County] - [Address], scored Hot, asking [price]. It matches your buy box for [City / Price]. Want me to send the details and photos?</p></div></div>
-<div id="view-settings" class="panel hidden"><h2>Storage &amp; Connections</h2><p>This version saves records in this browser only. It has no login, private cloud database, live county feed, skip-trace service or unattended scheduler. Do not enter sensitive claimant documents here.</p><p>Previously entered connection values are retained locally for migration, but are not used to connect or prove service availability. Never put secret provider keys in a public webpage.</p><button class="btn" onclick="exportBackup()">Download data backup</button><label>Restore / merge backup (existing records retained)</label><input id="backupFile" type="file" accept="application/json,.json" onchange="importBackup(this.files[0])"><p id="backupMsg" role="status"></p><p>Backups contain your contact records. Store them privately. Secret connection settings are excluded.</p></div>
+<div id="view-settings" class="panel hidden"><h2>Storage &amp; Connections</h2><p>Records save on this device. Optional private cloud sign-in below lets you manually load or save a copy across devices. This is not automatic synchronization. There is no live county feed, skip-trace service or unattended scheduler. Do not enter sensitive claimant documents here.</p><p>Previously entered connection values are retained locally for migration, but are not used to connect or prove service availability. Never put secret provider keys in a public webpage.</p><button class="btn" onclick="exportBackup()">Download data backup</button><label>Restore / merge backup (existing records retained)</label><input id="backupFile" type="file" accept="application/json,.json" onchange="importBackup(this.files[0])"><p id="backupMsg" role="status"></p><p>Backups contain your contact records. Store them privately. Secret connection settings are excluded.</p><h3>Private cloud workspace</h3><p>Use your dedicated RealDealsPro account. This is separate from SQPR and ChatGPT sign-in. Tokens are kept only until this page closes or reloads. Shared-device local records remain after sign-out; use your own device.</p><label for="cloudEmail">RealDealsPro email</label><input id="cloudEmail" type="email" autocomplete="username"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password"><button class="btn" data-cloud-action onclick="cloudLogin()">Sign in to private cloud</button><p id="cloudMsg" role="status">Cloud not signed in. Device records remain available.</p><div id="cloudActions" class="hidden"><button class="btn" data-cloud-action onclick="cloudLoad()">Load cloud copy</button><button class="btn" data-cloud-action onclick="cloudUpload()">Save device to cloud</button><button class="btn ghost" data-cloud-action onclick="cloudLogout()">Sign out</button></div></div>
 </div>
 <footer><a class="call" href="tel:8634308183">📞 CALL NOW</a><a class="text" href="sms:8634308183">💬 TEXT</a></footer>
 <script>
@@ -160,5 +160,54 @@ function render(){
 
 }
 showTabs(); render();
+// Publishable project key only. Authentication tokens stay in memory.
+const CLOUD_URL='https://muieigdcixhcjuenxlci.supabase.co';
+const CLOUD_KEY='sb_publishable_f1SvVLK5ePsajlSpBqZDWw_OXHuxiV8';
+let cloudSession=null,cloudVersion=null,cloudBusy=false;
+const cloudMsg=m=>document.getElementById('cloudMsg').textContent=m;
+function cloudSessionFrom(x){if(!x?.access_token||!x?.refresh_token||!x?.user?.id)throw Error('Incomplete sign-in response.');return {...x,expires_at:Number(x.expires_at)||Date.now()/1000+Number(x.expires_in||3600)}}
+async function cloudRequest(path,options={}){
+ const response=await fetch(CLOUD_URL+path,{...options,headers:{apikey:CLOUD_KEY,'Content-Type':'application/json',...(cloudSession?{Authorization:'Bearer '+cloudSession.access_token}:{}),...options.headers}});
+ const text=await response.text();let data;try{data=text?JSON.parse(text):null}catch{throw Error('Unexpected cloud response. Local records retained.')}
+ if(!response.ok)throw Error(data?.msg||data?.message||data?.error_description||data?.error||'Cloud request failed.');return data;
+}
+async function cloudTask(fn){if(cloudBusy)return;cloudBusy=true;document.querySelectorAll('[data-cloud-action]').forEach(b=>b.disabled=true);try{await fn()}catch(e){cloudMsg(e.message)}finally{cloudBusy=false;document.querySelectorAll('[data-cloud-action]').forEach(b=>b.disabled=false)}}
+function validateCloudData(data){
+ if(!data||typeof data!=='object'||JSON.stringify(data).length>5*1024*1024)throw Error('Cloud data format or size needs review.');
+ for(const k of ['leads','investors','surplus','logs'])if(!Array.isArray(data[k])||data[k].length>10000)throw Error('Invalid cloud collection: '+k);
+ for(const k of ['leads','investors','surplus','logs'])for(const row of data[k])if(!row||typeof row!=='object'||Array.isArray(row)||Object.entries(row).some(([key,value])=>['__proto__','constructor','prototype'].includes(key)||value!==null&&!['string','number','boolean'].includes(typeof value)||typeof value==='number'&&!Number.isFinite(value)))throw Error('Invalid cloud record.');
+ for(const r of data.leads)if(typeof r.a!=='string'||typeof r.c!=='string'||typeof r.owner!=='string')throw Error('Invalid cloud lead.');
+ for(const r of data.investors)if(typeof r.n!=='string')throw Error('Invalid cloud buyer.');
+ for(const r of data.surplus)if(typeof r.a!=='string'||typeof r.c!=='string'||typeof r.caseNo!=='string'||!Number.isFinite(r.sale)||!Number.isFinite(r.debt)||r.sale<0||r.debt<0)throw Error('Invalid cloud surplus case.');
+ return data;
+}
+async function cloudRefresh(){if(!cloudSession)throw Error('Sign in first.');if(Date.now()/1000>cloudSession.expires_at-60)cloudSession=cloudSessionFrom(await cloudRequest('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:cloudSession.refresh_token})}));}
+async function cloudLogin(){return cloudTask(async()=>{
+ cloudMsg('Signing in…');cloudSession=null;cloudVersion=null;document.getElementById('cloudActions').classList.add('hidden');
+ const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value;document.getElementById('cloudPassword').value='';
+ if(!email||!password)throw Error('Enter your RealDealsPro email and password.');
+ cloudSession=cloudSessionFrom(await cloudRequest('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})}));
+ document.getElementById('cloudActions').classList.remove('hidden');cloudMsg('Signed in as '+cloudSession.user.email+'. Cloud loading and saving are manual. Local records have not changed.');
+})}
+async function cloudLoad(){return cloudTask(async()=>{
+ await cloudRefresh();const rows=await cloudRequest('/rest/v1/workspaces?select=data,version&user_id=eq.'+encodeURIComponent(cloudSession.user.id));
+ if(!Array.isArray(rows))throw Error('Unexpected workspace response.');if(!rows.length){cloudVersion=0;cloudMsg('No cloud copy exists for this account. Review this device, then Save device to cloud.');return}
+ const row=rows[0],data=validateCloudData(row.data);if(!Number.isSafeInteger(row.version)||row.version<1)throw Error('Invalid workspace version.');
+ if(!confirm('Load the cloud copy for '+cloudSession.user.email+' and replace this device’s working records? A local safety copy is saved first. Download a backup too if needed.'))return;
+ const prior={leads,investors,surplus,logs};localStorage.setItem('rdp_before_cloud_load_v1',JSON.stringify({schema:'realdeals-backup-v1',createdAt:new Date().toISOString(),...prior}));
+ try{({leads,investors,surplus,logs}=data);save()}catch(e){({leads,investors,surplus,logs}=prior);try{save()}catch{}throw Error('Device storage failed. Safety copy retained; do not clear browser data.')}
+ cloudVersion=row.version;render();cloudMsg('Cloud copy loaded. Version '+cloudVersion+'. Changes on this device need Save device to cloud.');
+})}
+async function cloudUpload(){return cloudTask(async()=>{
+ await cloudRefresh();const user=cloudSession.user, data=validateCloudData({leads,investors,surplus,logs});
+ if(cloudVersion===null){const existing=await cloudRequest('/rest/v1/workspaces?select=version&user_id=eq.'+encodeURIComponent(user.id));if(!Array.isArray(existing))throw Error('Unexpected workspace response.');if(existing.length)throw Error('A cloud copy exists. Download your device backup, then load the cloud copy first to prevent overwriting another device.');cloudVersion=0}
+ if(!confirm('Save this device’s '+leads.length+' leads, '+investors.length+' buyers and '+surplus.length+' cases to '+user.email+'? Confirm these records belong to this account.'))return;
+ // Version filter makes stale writes affect zero rows; never retry blindly.
+ const rows=await cloudRequest('/rest/v1/workspaces'+(cloudVersion?'?user_id=eq.'+encodeURIComponent(user.id)+'&version=eq.'+cloudVersion:''),{method:cloudVersion?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:user.id,data})});
+ if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud copy changed on another device. Local records retained. Download a backup, then reload cloud records.');
+ if(!Number.isSafeInteger(rows[0].version)||rows[0].version<1)throw Error('Cloud save response needs review; refresh before another save.');cloudVersion=rows[0].version;cloudMsg('Cloud save confirmed. Version '+cloudVersion+'.');
+})}
+async function cloudLogout(){return cloudTask(async()=>{let failed=false;try{if(cloudSession)await cloudRequest('/auth/v1/logout',{method:'POST'})}catch{failed=true}cloudSession=null;cloudVersion=null;document.getElementById('cloudActions').classList.add('hidden');cloudMsg('Signed out on this page. Local records remain on this device.'+(failed?' Remote session revocation could not be confirmed.':''))})}
+
 </script></body></html>
 
