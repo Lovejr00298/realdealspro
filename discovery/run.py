@@ -6,10 +6,11 @@ import sys
 
 from hillsborough import fetch_candidates
 from pasco import fetch_latest
+from marion import fetch_marion
 
 
 def run():
-    sources = {"Pasco": fetch_latest, "Hillsborough": fetch_candidates}
+    sources = {"Pasco": fetch_latest, "Hillsborough": fetch_candidates, "Marion": fetch_marion}
     results = {}
     with ThreadPoolExecutor(max_workers=len(sources)) as pool:
         jobs = {county: pool.submit(fetch) for county, fetch in sources.items()}
