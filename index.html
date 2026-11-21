@@ -184,12 +184,12 @@ function renderCountyDiscovery(batch){
   const records=result.records.filter(record=>typeof record.taxDeedId==='string'&&Number.isFinite(record.reportedBalance)&&record.reportedBalance>0);
   const cards=records.map(record=>{
    const url=new URL(record.source);
-   const source=url.protocol==='https:'&&['app.pascoclerk.com','www.hillsclerk.com'].includes(url.hostname)
+   const source=url.protocol==='https:'&&['app.pascoclerk.com','www.hillsclerk.com','www.marioncountyclerk.org','marioncountyclerk.org'].includes(url.hostname)
     ?` · <a href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Clerk report</a>`:'';
    return `<div class="lead"><b>${escapeHtml(record.taxDeedId)}</b> · ${fmt(record.reportedBalance)} reported balance${source}
     <div class="small">${escapeHtml(record.parcelId||'')}${record.reportDate?' · Report date '+escapeHtml(record.reportDate):''}</div></div>`;
   }).join('');
-  sections.push(`<details><summary>${escapeHtml(county)} · ${records.length} to review</summary>${cards}</details>`);
+  sections.push(`<details><summary>${escapeHtml(county)} · ${records.length} to review${result.stale ? " · Last verified report (refresh unavailable)" : ""}</summary>${cards}</details>`);
  }
  return '<p>Scan time: '+escapeHtml(new Date(batch.fetchedAt).toLocaleString('en-US',{timeZone:'America/New_York'}))+' Eastern</p>'+sections.join('');
 }
