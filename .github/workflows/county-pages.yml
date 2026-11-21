@@ -1,0 +1,41 @@
+name: RealDealsPro county discovery
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 14 * * 1,4'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: realdeals-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.COUNTY_SCAN_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install workbook reader
+        run: python -m pip install openpyxl==3.1.5
+      - uses: actions/configure-pages@v5
+      - name: Build site and county queue
+        run: |
+          mkdir site
+          cp index.html CNAME site/
+          python discovery/publish.py > site/county-discovery.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
