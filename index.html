@@ -65,7 +65,22 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <p id="countyFundsStatus" role="status"></p>
 <ul id="countyFundsList"></ul>
 </section>
-<div id="view-surplus" class="panel hidden"><h2>💰 Surplus Funds — Florida</h2><details>
+<section id="view-foreclosure" class="panel hidden">
+<h2>Foreclosure Watch</h2>
+<p>Track cases by county and court case number. Mark a sale completed after checking the court record.</p>
+<form id="foreclosureWatchForm">
+<label>County <input name="county" required maxlength="50"></label>
+<label>Court case number <input name="caseNo" required maxlength="80"></label>
+<label>Property address or parcel ID <input name="property" required maxlength="160"></label>
+<label>Court record URL <input type="url" name="source" required></label>
+<label>Status <select name="stage"><option>Filed</option><option>Sale scheduled</option><option>Sale completed</option><option>Sale canceled</option></select></label>
+<button type="submit">Save case status</button>
+</form>
+<p id="foreclosureWatchStatus" role="status"></p>
+<ul id="foreclosureWatchList"></ul>
+<button type="button" onclick="go('surplus')">Go to Sale Surplus</button>
+</section>
+<div id="view-surplus" class="panel hidden"><h2>💰 Sale Surplus — Florida</h2><h3>Foreclosure sales to review</h3><ul id="foreclosureSurplusReview"></ul><details>
 <summary>Official surplus research links</summary>
 <p class="small">Use the tax-deed case number and parcel ID to match records. Confirm the report date, remaining balance, and who holds the funds before recording a lead as verified.</p>
 <ul>
@@ -172,7 +187,7 @@ function seed(preserve=false){
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
 let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['leads','Leads'],['kanban','Kanban'],['vault','Vault'],['surplus','Surplus 💰'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
+const tabs=[['dashboard','Dashboard'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
 function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render()}
 function runAutomation(){
@@ -465,7 +480,67 @@ function renderCountyFunds() {
  }
 }
 
+const foreclosureWatchKey = 'rdp_foreclosure_watch_v1';
+const foreclosureWatchForm = document.getElementById('foreclosureWatchForm');
+const foreclosureCaseKey = (county, caseNo) => JSON.stringify([county.trim().toLowerCase(), caseNo.trim().toUpperCase()]);
+let foreclosureWatch = JSON.parse(localStorage.getItem(foreclosureWatchKey) || '{}');
+
+foreclosureWatchForm.addEventListener('submit', event => {
+ event.preventDefault();
+ const status = document.getElementById('foreclosureWatchStatus');
+ try {
+  const entry = Object.fromEntries(Array.from(new FormData(foreclosureWatchForm), ([key, value]) => [key, value.trim()]));
+  if (!entry.county || !entry.caseNo || !entry.property || new URL(entry.source).protocol !== 'https:') {
+   throw new Error('Enter the county, case number, property, and an HTTPS court record link.');
+  }
+  const key = foreclosureCaseKey(entry.county, entry.caseNo);
+  const updated = {...foreclosureWatch, [key]: entry};
+  localStorage.setItem(foreclosureWatchKey, JSON.stringify(updated));
+  foreclosureWatch = updated;
+  render();
+  status.textContent = entry.stage === 'Sale completed' ? 'Saved. Check Sale Surplus for the review item.' : 'Case status saved.';
+ } catch (error) {
+  status.textContent = error.message;
+ }
+});
+
+function renderForeclosureWatch() {
+ const list = document.getElementById('foreclosureWatchList');
+ const review = document.getElementById('foreclosureSurplusReview');
+ list.replaceChildren();
+ review.replaceChildren();
+ for (const entry of Object.values(foreclosureWatch)) {
+  const row = document.createElement('li');
+  row.textContent = [entry.county, entry.caseNo, entry.property, entry.stage].join(' · ') + ' ';
+  const link = document.createElement('a');
+  link.href = entry.source;
+  link.textContent = 'Court record';
+  row.append(link);
+  const edit = document.createElement('button');
+  edit.type = 'button';
+  edit.textContent = 'Update status';
+  edit.addEventListener('click', () => {
+   for (const [key, value] of Object.entries(entry)) foreclosureWatchForm.elements.namedItem(key).value = value;
+   foreclosureWatchForm.elements.namedItem('stage').focus();
+  });
+  row.append(' ', edit);
+  list.append(row);
+  if (entry.stage === 'Sale completed') {
+   const item = document.createElement('li');
+   item.textContent = [entry.county, entry.caseNo, entry.property, 'Check court records for remaining surplus'].join(' · ') + ' ';
+   item.append(link.cloneNode(true));
+   review.append(item);
+  }
+ }
+ if (!review.children.length) {
+  const empty = document.createElement('li');
+  empty.textContent = 'No completed foreclosure sales awaiting a surplus check.';
+  review.append(empty);
+ }
+}
+
 function render(){
+ renderForeclosureWatch();
  if (tab === "county-funds") renderCountyFunds();
  document.getElementById('surplusOutreachEnabled').checked = localStorage.getItem(outreachSetting) === 'yes';
  let hot=leads.filter(l=>l.status=='Hot').length; let vault=leads.filter(l=>l.vault).length;
