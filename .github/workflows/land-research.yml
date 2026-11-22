@@ -1,0 +1,61 @@
+name: Land research browser checks
+on:
+  pull_request:
+    paths: [index.html, .github/workflows/land-research.yml]
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8752 &
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright, expect
+          with sync_playwright() as p:
+              page = p.chromium.launch().new_page(viewport={'width':390,'height':800})
+              errors = []
+              page.on('pageerror', lambda error: errors.append(str(error)))
+              page.on('dialog', lambda dialog: dialog.accept())
+              page.goto('http://localhost:8752')
+              page.get_by_role('button', name='Property Leads', exact=True).click()
+              page.fill('#nAddr', 'Synthetic land test')
+              page.select_option('#nType', 'Vacant Land')
+              page.evaluate('addLead()')
+              card = page.locator('#leadsList .lead').filter(has_text='Synthetic land test')
+              expect(card).to_contain_text('Land fit 0/100')
+              card.get_by_role('button', name='Research', exact=True).click()
+              form = page.locator('#leadResearchForm')
+              form.locator('[name=landAccess]').check()
+              form.locator('[name=landUse]').check()
+              save = form.get_by_role('button', name='Save research')
+              save.click()
+              expect(page.locator('#leadResearchStatus')).to_contain_text('Add evidence')
+              for field,value in {
+                  'landEvidence':'Test access and zoning records', 'researchCase':'TEST-CASE',
+                  'researchCaseUrl':'https://www.polkclerkfl.gov/', 'researchMatch':'Test parcel comparison',
+                  'researchComps':'Test sale evidence', 'researchValue':'100000', 'researchDebt':'40000',
+                  'researchEquitySource':'Test recorded inputs', 'researchOwner':'Example Owner',
+                  'researchMail':'Example mailing address', 'researchOwnerUrl':'https://www.polkpa.org/'
+              }.items():
+                  form.locator('[name='+field+']').fill(value)
+              save.click()
+              expect(card).to_contain_text('Land fit 40/100')
+              expect(card).to_contain_text('60.0%')
+              expect(card).to_contain_text('TEST-CASE')
+              expect(card).to_contain_text('Acceptance 0/100')
+              page.reload()
+              page.get_by_role('button', name='Property Leads', exact=True).click()
+              card.get_by_role('button', name='Research', exact=True).click()
+              expect(form.locator('[name=researchComps]')).to_have_value('Test sale evidence')
+              expect(form.locator('[name=researchMail]')).to_have_value('Example mailing address')
+              expect(form.locator('[name=landAccess]')).to_be_checked()
+              assert not errors, errors
+          PY
