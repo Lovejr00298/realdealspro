@@ -1,5 +1,10 @@
 name: RealDealsPro county discovery
 on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - .github/workflows/county-pages.yml
   workflow_dispatch:
   schedule:
     - cron: '17 14 * * 1,4'
@@ -15,7 +20,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.COUNTY_SCAN_ENABLED == 'true')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || vars.COUNTY_SCAN_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
