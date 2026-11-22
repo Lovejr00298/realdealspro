@@ -49,7 +49,33 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <h3>Offer Calculator</h3><div class="greenBox"><label>After Repair Value (ARV) $</label><input id="arv" type="number" value="180000"><label>Repair Cost $</label><input id="rep" type="number" value="25000"><label>Your Wholesale Fee $</label><input id="fee" type="number" value="10000"><button class="btn orange" onclick="calcOffer()">Calculate Max Offer</button><p id="offerOut" style="font-weight:800;font-size:18px"></p><p class="small">Formula: (ARV x 70%) - Repairs - Fee = Max Offer. Estimate only, check comps.</p></div></div>
 <div id="view-kanban" class="panel hidden"><h2>Kanban</h2><div id="kanban"></div></div>
 <div id="view-vault" class="panel hidden"><h2>Vault — Hot 80+</h2><p class="small">New entries require a score of 80+. Previously saved entries retain their actual score and status.</p><div id="vaultList"></div></div>
-<div id="view-surplus" class="panel hidden"><h2>💰 Surplus Funds — Florida</h2><p class="small">Track cases and source documents. Starter cases are fictional examples. Auction date alone does not establish a claim deadline. Confirm claimant-specific rules with the Clerk or your attorney.</p><div class="row"><select id="fSurplus" onchange="render()"><option value="">All Surplus</option><option value="Needs verification">Needs verification</option><option value="Past planning date">Past planning date</option><option value="Open">Open Only</option><option value="Near Deadline">Near Deadline Only</option></select><select id="fSurplusCounty" onchange="render()"><option value="">All Counties</option><option>Alachua</option><option>Baker</option><option>Bay</option><option>Bradford</option><option>Brevard</option><option>Broward</option><option>Calhoun</option><option>Charlotte</option><option>Citrus</option><option>Clay</option><option>Collier</option><option>Columbia</option><option>DeSoto</option><option>Dixie</option><option>Duval</option><option>Escambia</option><option>Flagler</option><option>Franklin</option><option>Gadsden</option><option>Gilchrist</option><option>Glades</option><option>Gulf</option><option>Hamilton</option><option>Hardee</option><option>Hendry</option><option>Hernando</option><option>Highlands</option><option>Hillsborough</option><option>Holmes</option><option>Indian River</option><option>Jackson</option><option>Jefferson</option><option>Lafayette</option><option>Lake</option><option>Lee</option><option>Leon</option><option>Levy</option><option>Liberty</option><option>Madison</option><option>Manatee</option><option>Marion</option><option>Martin</option><option>Miami-Dade</option><option>Monroe</option><option>Nassau</option><option>Okaloosa</option><option>Okeechobee</option><option>Orange</option><option>Osceola</option><option>Palm Beach</option><option>Pasco</option><option>Pinellas</option><option>Polk</option><option>Putnam</option><option>Santa Rosa</option><option>Sarasota</option><option>Seminole</option><option>St. Johns</option><option>St. Lucie</option><option>Sumter</option><option>Suwannee</option><option>Taylor</option><option>Union</option><option>Volusia</option><option>Wakulla</option><option>Walton</option><option>Washington</option></select></div><details><summary>Find and import county cases</summary>
+<section id="view-county-funds" class="panel hidden">
+<h2>County Unclaimed Funds</h2>
+<p><a href="https://www.polkclerkfl.gov/m/newsflash">Polk clerk notices</a> · <a href="https://www.duvalclerk.gov/departments/finance-and-accounting/unclaimed-funds">Duval clerk lookup</a> · <a href="https://www.fltreasurehunt.gov/">Florida state lookup</a></p>
+<p>Save a public notice as a research lead. Confirm availability with the holder. Saved entries are stored in this browser.</p>
+<form id="countyFundsForm">
+<label>County <input name="county" required></label>
+<label>Fund type <select name="category"><option>Cash bond</option><option>Court registry</option><option>General fund</option><option>Jury or witness payment</option><option>Outstanding check</option><option>Other</option></select></label>
+<label>Record reference <input name="reference" required></label>
+<label>Notice date <input type="date" name="date" required></label>
+<label>Amount in notice <input type="number" name="amount" min="0.01" step="0.01" required></label>
+<label>Official source URL <input type="url" name="source" required></label>
+<button type="submit">Save research lead</button>
+</form>
+<p id="countyFundsStatus" role="status"></p>
+<ul id="countyFundsList"></ul>
+</section>
+<div id="view-surplus" class="panel hidden"><h2>💰 Surplus Funds — Florida</h2><details>
+<summary>Official surplus research links</summary>
+<p class="small">Use the tax-deed case number and parcel ID to match records. Confirm the report date, remaining balance, and who holds the funds before recording a lead as verified.</p>
+<ul>
+<li>Osceola · <a href="https://osceolaclerk.com/tax-deeds/">Clerk reports and claim instructions</a> · <a href="https://officialrecords.osceolaclerk.org/browserviewtd/">Tax-deed case lookup</a></li>
+<li>Polk · <a href="https://www.polkclerkfl.gov/189/Tax-Deeds">Current and archived tax-deed searches</a></li>
+<li>Duval · <a href="https://taxdeed.duvalclerk.com/Home/">Tax-deed surplus search</a> · <a href="https://www.duvalclerk.gov/getmedia/9a03a97e-6970-4343-a91b-82f9cde23a5b/Claim-to-Receive-Surplus-Funds.pdf">Tax-deed claim form</a></li>
+<li>Alachua · <a href="https://www.alachuacounty.us/Depts/Clerk/TaxDeeds/Pages/TaxDeedSales.aspx">Clerk tax-deed and surplus resources</a></li>
+<li>State-held funds · <a href="https://www.fltreasurehunt.gov/">Florida Treasure Hunt</a></li>
+</ul>
+</details><p class="small">Track cases and source documents. Starter cases are fictional examples. Auction date alone does not establish a claim deadline. Confirm claimant-specific rules with the Clerk or your attorney.</p><div class="row"><select id="fSurplus" onchange="render()"><option value="">All Surplus</option><option value="Needs verification">Needs verification</option><option value="Past planning date">Past planning date</option><option value="Open">Open Only</option><option value="Near Deadline">Near Deadline Only</option></select><select id="fSurplusCounty" onchange="render()"><option value="">All Counties</option><option>Alachua</option><option>Baker</option><option>Bay</option><option>Bradford</option><option>Brevard</option><option>Broward</option><option>Calhoun</option><option>Charlotte</option><option>Citrus</option><option>Clay</option><option>Collier</option><option>Columbia</option><option>DeSoto</option><option>Dixie</option><option>Duval</option><option>Escambia</option><option>Flagler</option><option>Franklin</option><option>Gadsden</option><option>Gilchrist</option><option>Glades</option><option>Gulf</option><option>Hamilton</option><option>Hardee</option><option>Hendry</option><option>Hernando</option><option>Highlands</option><option>Hillsborough</option><option>Holmes</option><option>Indian River</option><option>Jackson</option><option>Jefferson</option><option>Lafayette</option><option>Lake</option><option>Lee</option><option>Leon</option><option>Levy</option><option>Liberty</option><option>Madison</option><option>Manatee</option><option>Marion</option><option>Martin</option><option>Miami-Dade</option><option>Monroe</option><option>Nassau</option><option>Okaloosa</option><option>Okeechobee</option><option>Orange</option><option>Osceola</option><option>Palm Beach</option><option>Pasco</option><option>Pinellas</option><option>Polk</option><option>Putnam</option><option>Santa Rosa</option><option>Sarasota</option><option>Seminole</option><option>St. Johns</option><option>St. Lucie</option><option>Sumter</option><option>Suwannee</option><option>Taylor</option><option>Union</option><option>Volusia</option><option>Wakulla</option><option>Walton</option><option>Washington</option></select></div><details><summary>Find and import county cases</summary>
 <p><a href="https://polkclerkfl.gov/189/Tax-Deeds" target="_blank" rel="noopener noreferrer">Polk Clerk tax deed and surplus search</a><br>
 <a href="https://app.pascoclerk.com/appdot-public-statistical-reports-taxdeeds.asp" target="_blank" rel="noopener noreferrer">Pasco Clerk tax deed reports</a><br>
 <a href="https://osceolaclerk.com/tax-deeds/" target="_blank" rel="noopener noreferrer">Osceola Clerk tax deed records and sales</a><br>
@@ -75,7 +101,17 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <h3>3) Surplus Funds - Owner Info Sheet</h3><input id="suOwner" placeholder="Former Owner Name"><input id="suCase" placeholder="Case #"><input id="suAddr" placeholder="Property Address"><input id="suAmt" type="number" placeholder="Estimated Surplus $"><button class="btn green" onclick="genContract('surplus')">Generate Surplus Info Sheet</button><div id="ctOut3" class="greenBox hidden" style="margin-top:10px"></div>
 </div>
 <div id="view-scripts" class="panel hidden"><h2>Call Scripts</h2><div class="card" style="margin-bottom:10px"><b>Cold Owner</b><p class="small">Hi, I'm Earl with RealDealsPro™. I saw your property on [Address] and wanted to check if you'd ever consider selling for cash, as-is, no repairs. Would that be something you'd be open to talking about for 2 minutes?</p></div><div class="card" style="margin-bottom:10px"><b>Hot Owner</b><p class="small">Hi, I'm Earl. We flagged your property because of equity and tax signals. I can make a fair cash offer and close on your timeline. Is it okay if I ask a couple quick questions about the condition?</p></div><div class="card" style="margin-bottom:10px"><b>Surplus Funds Owner</b><p class="small">Hi, I'm Earl with RealDealsPro™. After the foreclosure sale on [Address], there may have been surplus funds left over that belong to you as the former owner. I help people check if they have funds held by the Clerk and understand the claim deadline. Would you like me to check your case number for you? This is general info, not legal advice.</p></div><div class="card"><b>Investor / Buyer</b><p class="small">Hi, I have a new off-market deal in [County] - [Address], scored Hot, asking [price]. It matches your buy box for [City / Price]. Want me to send the details and photos?</p></div></div>
-<div id="view-settings" class="panel hidden"><h2>Storage &amp; Connections</h2><p>Records save on this device. Sign in to sync across devices. If this browser’s records differ from the cloud, choose which workspace to use before syncing. There is no live county feed, skip-trace service or unattended scheduler. Do not enter sensitive claimant documents here.</p><p>Previously entered connection values are retained locally for migration, but are not used to connect or prove service availability. Never put secret provider keys in a public webpage.</p><button class="btn" onclick="exportBackup()">Download data backup</button><label>Restore / merge backup (existing records retained)</label><input id="backupFile" type="file" accept="application/json,.json" onchange="importBackup(this.files[0])"><p id="backupMsg" role="status"></p><p>Backups contain your contact records. Store them privately. Secret connection settings are excluded.</p><h3>Private cloud workspace</h3><p>Use your dedicated RealDealsPro™ account. This is separate from SQPR and ChatGPT sign-in. Tokens are kept only until this page closes or reloads. Shared-device local records remain after sign-out; use your own device.</p><label for="cloudEmail">RealDealsPro™ email</label><input id="cloudEmail" type="email" autocomplete="username"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password"><button class="btn" data-cloud-action onclick="cloudLogin()">Sign in to private cloud</button><button class="btn ghost" data-cloud-action onclick="showCloudSignup()">Create RealDealsPro™ account</button><div id="cloudSignup" class="hidden"><h3>Create your app account</h3><p>This account stores only your private RealDealsPro™ workspace. It does not grant Supabase dashboard, GitHub or SQPR access. Choose a new app password; no payment is required.</p><label for="signupEmail">Account email</label><input id="signupEmail" type="email" autocomplete="email"><label for="signupPassword">New RealDealsPro™ password (12 characters minimum)</label><input id="signupPassword" type="password" autocomplete="new-password" minlength="12"><label for="signupAgain">Confirm new password</label><input id="signupAgain" type="password" autocomplete="new-password" minlength="12"><button class="btn" data-cloud-action onclick="cloudSignup()">Create my app account</button><p>Open the confirmation email if one is sent. After confirming, return to this page and sign in above. If the email includes a numeric confirmation code instead of a link, enter it below. Email delivery and redirect settings may require owner configuration; an account request is not proof that email arrived.</p><label for="signupCode">Email confirmation code (if provided)</label><input id="signupCode" type="text" inputmode="numeric" autocomplete="one-time-code"><button class="btn ghost" data-cloud-action onclick="cloudConfirmEmail()">Confirm email code</button></div><p id="cloudMsg" role="status">Cloud not signed in. Device records remain available.</p><div id="cloudActions" class="hidden"><button class="btn" data-cloud-action onclick="cloudLoad()">Load cloud copy</button><button class="btn" data-cloud-action onclick="cloudUpload()">Save device to cloud</button><button class="btn ghost" data-cloud-action onclick="cloudLogout()">Sign out</button></div></div>
+<div id="view-settings" class="panel hidden"><h2>Storage &amp; Connections</h2><label><input type="checkbox" id="surplusOutreachEnabled" onchange="setSurplusOutreach(this.checked)"> Enable surplus email drafting on this device</label><details>
+<summary>Surplus pricing reference</summary>
+<p class="small">Proposed prices for internal planning. Confirm that the service, fee, and payment timing are permitted for the claim type before quoting or accepting payment.</p>
+<ul>
+<li><strong>Free case notice.</strong> County, case number, and official clerk link.</li>
+<li><strong>$149 verified research packet.</strong> Dated clerk-reported balance, case and parcel match, official records, and filing instructions.</li>
+<li><strong>$249 expanded research packet.</strong> Use when extra records work is needed and disclose the scope before the client orders.</li>
+<li><strong>Full recovery.</strong> Separate written total. Where permitted, credit the packet fee already paid against that total. Collect the remaining recovery fee only after the client receives funds.</li>
+</ul>
+<p class="small">When a client chooses to file independently, the completed research packet is a standalone paid service where permitted.</p>
+</details><p>Records save on this device. Sign in to sync across devices. If this browser’s records differ from the cloud, choose which workspace to use before syncing. There is no live county feed, skip-trace service or unattended scheduler. Do not enter sensitive claimant documents here.</p><p>Previously entered connection values are retained locally for migration, but are not used to connect or prove service availability. Never put secret provider keys in a public webpage.</p><button class="btn" onclick="exportBackup()">Download data backup</button><label>Restore / merge backup (existing records retained)</label><input id="backupFile" type="file" accept="application/json,.json" onchange="importBackup(this.files[0])"><p id="backupMsg" role="status"></p><p>Backups contain your contact records. Store them privately. Secret connection settings are excluded.</p><h3>Private cloud workspace</h3><p>Use your dedicated RealDealsPro™ account. This is separate from SQPR and ChatGPT sign-in. Tokens are kept only until this page closes or reloads. Shared-device local records remain after sign-out; use your own device.</p><label for="cloudEmail">RealDealsPro™ email</label><input id="cloudEmail" type="email" autocomplete="username"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password"><button class="btn" data-cloud-action onclick="cloudLogin()">Sign in to private cloud</button><button class="btn ghost" data-cloud-action onclick="showCloudSignup()">Create RealDealsPro™ account</button><div id="cloudSignup" class="hidden"><h3>Create your app account</h3><p>This account stores only your private RealDealsPro™ workspace. It does not grant Supabase dashboard, GitHub or SQPR access. Choose a new app password; no payment is required.</p><label for="signupEmail">Account email</label><input id="signupEmail" type="email" autocomplete="email"><label for="signupPassword">New RealDealsPro™ password (12 characters minimum)</label><input id="signupPassword" type="password" autocomplete="new-password" minlength="12"><label for="signupAgain">Confirm new password</label><input id="signupAgain" type="password" autocomplete="new-password" minlength="12"><button class="btn" data-cloud-action onclick="cloudSignup()">Create my app account</button><p>Open the confirmation email if one is sent. After confirming, return to this page and sign in above. If the email includes a numeric confirmation code instead of a link, enter it below. Email delivery and redirect settings may require owner configuration; an account request is not proof that email arrived.</p><label for="signupCode">Email confirmation code (if provided)</label><input id="signupCode" type="text" inputmode="numeric" autocomplete="one-time-code"><button class="btn ghost" data-cloud-action onclick="cloudConfirmEmail()">Confirm email code</button></div><p id="cloudMsg" role="status">Cloud not signed in. Device records remain available.</p><div id="cloudActions" class="hidden"><button class="btn" data-cloud-action onclick="cloudLoad()">Load cloud copy</button><button class="btn" data-cloud-action onclick="cloudUpload()">Save device to cloud</button><button class="btn ghost" data-cloud-action onclick="cloudLogout()">Sign out</button></div></div>
 </div>
 <footer><a class="call" href="tel:8634308183">📞 CALL NOW</a><a class="text" href="sms:8634308183">💬 TEXT</a></footer>
 <script>
@@ -136,7 +172,7 @@ function seed(preserve=false){
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
 let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['leads','Leads'],['kanban','Kanban'],['vault','Vault'],['surplus','Surplus 💰'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
+const tabs=[['dashboard','Dashboard'],['leads','Leads'],['kanban','Kanban'],['vault','Vault'],['surplus','Surplus 💰'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
 function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render()}
 function runAutomation(){
@@ -230,6 +266,101 @@ function importCountyCases(){
   status.textContent=pending.length+' imported for review. '+duplicates+' duplicates skipped.';
  }catch(error){status.textContent=error.message;}
 }
+const surplusClerkPages = new Map([
+ ['Marion', 'https://www.marioncountyclerk.org/departments/records-recording/tax-deeds-and-lands-available-for-taxes/unclaimed-funds/'],
+ ['Pasco', 'https://www.pascoclerk.com/839/Tax-Deed-Surplus'],
+ ['Hillsborough', 'https://www.hillsclerk.com/taxdeeds']
+]);
+
+const outreachSetting = 'rdp_surplus_outreach_enabled';
+const suppressionKey = 'rdp_surplus_email_suppression';
+
+function setSurplusOutreach(enabled) {
+ localStorage.setItem(outreachSetting, enabled ? 'yes' : 'no');
+ render();
+}
+
+function emailSuppressed(email) {
+ const normalized = String(email || '').trim().toLowerCase();
+ return Boolean(normalized) && (
+  JSON.parse(localStorage.getItem(suppressionKey) || '[]').includes(normalized) ||
+  surplus.some(record => record.emailPreference?.state === 'opted-out' &&
+   record.emailPreference.email.toLowerCase() === normalized)
+ );
+}
+
+function surplusEmailDraft(record) {
+ const clerk = surplusClerkPages.get(record.c);
+ if (!clerk || !record.caseNo) return '';
+ return [
+  'Subject: Public tax-deed record in ' + record.c + ' County',
+  '',
+  'Hello, I’m Earl with RealDealsPro, an independent business. I’m contacting you about a public tax-deed record that may relate to you.',
+  '',
+  'County case number: ' + record.caseNo,
+  'Official clerk page: ' + clerk,
+  '',
+  'You can contact the clerk directly to check whether funds remain and whether you may be eligible. Please do not send sensitive information by email.',
+  '',
+  'You can file directly with the clerk. If you would like to discuss paid assistance, reply to request details about the service and written pricing before deciding. If you do not want further outreach from RealDealsPro, reply “unsubscribe.”',
+  '',
+  'RealDealsPro | [Insert valid business postal address before sending]'
+ ].join('\n');
+}
+
+function surplusOutreachPanel(record, index) {
+ const clerk = surplusClerkPages.get(record.c);
+ if (!clerk) return '';
+ const documents = `<p><a href="${clerk}" target="_blank" rel="noopener noreferrer">Official claim forms and instructions</a></p>`;
+ if (localStorage.getItem(outreachSetting) !== 'yes') return documents;
+ const draft = surplusEmailDraft(record);
+ if (!draft) return documents;
+ const preference = record.emailPreference;
+ const blocked = preference?.state === 'opted-out' || emailSuppressed(preference?.email);
+ const status = blocked ? 'Opted out' :
+  preference?.state === 'opted-in' ? 'Opted in for email about this case' : 'Unknown';
+ const draftField = blocked ? '' :
+  `<p class="small">Verify the recipient and case, and complete the sender address before sending.</p><textarea readonly aria-label="First-contact email draft">${escapeHtml(draft)}</textarea>`;
+ return `<details><summary>Email outreach and clerk documents</summary>
+ ${documents}
+ <p class="small">Paid assistance: confirm the case holder and permitted scope and fee before quoting. County-held and Florida state-held claims have different rules.</p>
+ <p class="small">Email preference for this case: ${status}</p>
+ ${draftField}
+ <label>Email address <input type="email" id="surplusEmail${index}" value="${escapeHtml(preference?.email || '')}"></label>
+ <label>Source or reference for the recipient’s response <input id="surplusEmailEvidence${index}" maxlength="300" value="${escapeHtml(preference?.evidence || '')}"></label>
+ <button type="button" onclick="recordSurplusEmailPreference(${index}, 'opted-in')">Record email opt-in</button>
+ <button type="button" onclick="recordSurplusEmailPreference(${index}, 'opted-out')">Record email opt-out</button>
+ </details>`;
+}
+
+function recordSurplusEmailPreference(index, state) {
+ const record = surplus[index];
+ const address = document.getElementById('surplusEmail' + index);
+ const evidence = document.getElementById('surplusEmailEvidence' + index).value.trim();
+ if (!address.value.trim() || !address.checkValidity() || !evidence) {
+  alert('Enter the recipient’s email address and a reference to their response.');
+  return;
+ }
+ const email = address.value.trim().toLowerCase();
+ if (state === 'opted-in' && emailSuppressed(email)) {
+  alert('This email address is on the do-not-contact list.');
+  return;
+ }
+ if (state === 'opted-out') {
+  const blocked = new Set(JSON.parse(localStorage.getItem(suppressionKey) || '[]'));
+  blocked.add(email);
+  localStorage.setItem(suppressionKey, JSON.stringify([...blocked]));
+ }
+ const previous = record.emailPreference;
+ record.emailPreference = { email: address.value.trim(), state, evidence, recordedAt: new Date().toISOString() };
+ try { save(); } catch {
+  record.emailPreference = previous;
+  alert('The email preference could not be saved.');
+  return;
+ }
+ render();
+}
+
 function leadContactActions(phone){
  const number=String(phone||'').trim();
  if(!/^\+?[\d(). -]+$/.test(number))return '';
@@ -293,7 +424,50 @@ function openSurplusSheet(index){
  genContract('surplus');
  document.getElementById('ctOut3').scrollIntoView?.({block:'start'});
 }
+const countyFundsStorageKey = 'rdp_county_funds_research';
+const countyFundsForm = document.getElementById('countyFundsForm');
+
+countyFundsForm.addEventListener('submit', event => {
+ event.preventDefault();
+ const status = document.getElementById('countyFundsStatus');
+ try {
+  const entry = Object.fromEntries(new FormData(countyFundsForm));
+  for (const field of ['county','reference']) entry[field] = entry[field].trim();
+  if (!entry.county || !entry.reference || new URL(entry.source).protocol !== 'https:') {
+   throw Error('Enter a county, record reference and official HTTPS source.');
+  }
+  const entries = JSON.parse(localStorage.getItem(countyFundsStorageKey) || '[]');
+  const key = item => [item.county, item.category, item.reference, item.date].join('|').toLowerCase();
+  if (entries.some(item => key(item) === key(entry))) throw Error('This notice entry is already saved.');
+  entries.push(entry);
+  localStorage.setItem(countyFundsStorageKey, JSON.stringify(entries));
+  countyFundsForm.reset();
+  renderCountyFunds();
+  status.textContent = 'Research lead saved.';
+ } catch (error) {
+  status.textContent = error.message;
+ }
+});
+
+function renderCountyFunds() {
+ const list = document.getElementById('countyFundsList');
+ list.replaceChildren();
+ const entries = JSON.parse(localStorage.getItem(countyFundsStorageKey) || '[]');
+ for (const entry of entries) {
+  const row = document.createElement('li');
+  row.textContent = [entry.county, entry.category, entry.reference, entry.date,
+   fmt(Number(entry.amount)), 'Availability unverified'].join(' · ') + ' ';
+  const link = document.createElement('a');
+  link.href = entry.source;
+  link.textContent = 'Source';
+  row.append(link);
+  list.append(row);
+ }
+}
+
 function render(){
+ if (tab === "county-funds") renderCountyFunds();
+ document.getElementById('surplusOutreachEnabled').checked = localStorage.getItem(outreachSetting) === 'yes';
  let hot=leads.filter(l=>l.status=='Hot').length; let vault=leads.filter(l=>l.vault).length;
  document.getElementById('cTotal').textContent=leads.length; document.getElementById('cHot').textContent=hot; document.getElementById('cVault').textContent=vault; document.getElementById('cInv').textContent=investors.length;
  let totalSurplus=surplus.reduce((s,x)=>s+Math.max(0,(x.sale-x.debt)),0); let openSurplus=surplus.filter(s=>s.status!='Claimed').length;
@@ -312,7 +486,7 @@ function render(){
  const near=cases.filter(({record})=>caseState(record)==='Near Deadline').length;
  const unverified=cases.filter(({record})=>caseState(record)==='Needs verification').length;
  document.getElementById('surplusReview').textContent=near+' planning dates within 14 days · '+unverified+' cases need verification';
- document.getElementById('surplusList').innerHTML=cases.filter(({record})=>!fs2||caseState(record)===fs2).map(({record:s,index})=>{let amt=Math.max(0,s.sale-s.debt); let dl=deadlineOf(s); let state=caseState(s); let cls=state==='Near Deadline'?'urgent':'surplus'; return `<div class="lead"><b>${escapeHtml(s.a)}</b> <span class="pill ${cls}">${state} • ${fmt(amt)} Estimated</span><div class="small">Case: ${escapeHtml(s.caseNo)} • ${escapeHtml(s.c)} • Former Owner: ${escapeHtml(s.owner)}<br>Sale ${fmt(s.sale)} — Debt ${fmt(s.debt)} = Estimated difference ${fmt(amt)}<br>Auction: ${escapeHtml(s.auction)} • Planning date: ${dl||'Needs verification'}<br>Source: ${escapeHtml(s.source||'Not supplied')}<br><b>Next Step:</b> Check with Clerk for this case number. General info only.</div><button type="button" onclick="openSurplusSheet(${index})">Open surplus info sheet</button> <button type="button" onclick="downloadCaseReminder(${index})">Download calendar reminder</button> ${caseHoldControls(s,index)}</div>`}).join('')||'<p class="small">No surplus cases match.</p>';
+ document.getElementById('surplusList').innerHTML=cases.filter(({record})=>!fs2||caseState(record)===fs2).map(({record:s,index})=>{let amt=Math.max(0,s.sale-s.debt); let dl=deadlineOf(s); let state=caseState(s); let cls=state==='Near Deadline'?'urgent':'surplus'; return `<div class="lead"><b>${escapeHtml(s.a)}</b> <span class="pill ${cls}">${state} • ${fmt(amt)} Estimated</span><div class="small">Case: ${escapeHtml(s.caseNo)} • ${escapeHtml(s.c)} • Former Owner: ${escapeHtml(s.owner)}<br>Sale ${fmt(s.sale)} — Debt ${fmt(s.debt)} = Estimated difference ${fmt(amt)}<br>Auction: ${escapeHtml(s.auction)} • Planning date: ${dl||'Needs verification'}<br>Source: ${escapeHtml(s.source||'Not supplied')}<br><b>Next Step:</b> Check with Clerk for this case number. General info only.</div><button type="button" onclick="openSurplusSheet(${index})">Open surplus info sheet</button> <button type="button" onclick="downloadCaseReminder(${index})">Download calendar reminder</button> ${caseHoldControls(s,index)} ${surplusOutreachPanel(s,index)}</div>`}).join('')||'<p class="small">No surplus cases match.</p>';
  let qi=(document.getElementById('searchInv')?.value||'').toLowerCase();
  document.getElementById('invList').innerHTML=investors.filter(v=>!qi||v.n.toLowerCase().includes(qi)||(v.city||'').toLowerCase().includes(qi)||(v.box||'').toLowerCase().includes(qi)).map(v=>`<div class="lead"><b>${escapeHtml(v.n)}</b> <span class="pill surplus">${escapeHtml(v.type||'Buyer')}</span><div class="small"><b>CONTACT:</b> Phone: ${escapeHtml(v.p)} • Email: ${escapeHtml(v.e||'—')} • City: ${escapeHtml(v.city||'—')} • Max: ${v.max?fmt(v.max):'—'}<br>Buy Box: ${escapeHtml(v.box)}<br>Notes: ${escapeHtml(v.notes||'')}</div></div>`).join('');
 
