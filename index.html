@@ -64,6 +64,29 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <select id="fLeadType" onchange="render()"><option value="">All properties</option><option value="distressed">Distressed properties</option><option value="vacant-land">Vacant land classification</option><option value="vacant">Vacancy reported</option><option value="foreclosure">Foreclosure flagged</option><option value="tax">Tax distress flagged</option></select><input id="search" placeholder="Search address, owner, phone, email..." oninput="render()"><div class="row"><select id="fCounty" onchange="render()"><option value="">All Counties</option><option>Polk</option><option>Hillsborough</option><option>Orange</option></select><select id="fScore" onchange="render()"><option value="">All Scores</option><option value="Hot">Hot Only</option><option value="Warm">Warm Only</option><option value="Cold">Cold Only</option></select></div><div id="leadsList"></div>
 <h3>Add Lead — Full Contact</h3><input id="nAddr" placeholder="Property Address"><input id="nCity" placeholder="Property city"><input id="nAsking" type="number" min="0" placeholder="Asking price $ (optional)"><select id="nType"><option value="">Property type unknown</option><option>House</option><option>Land</option><option>Vacant Land</option><option>Commercial</option></select><input id="nEquity" type="number" min="0" max="100" placeholder="Equity % (optional; verified estimate)"><input id="nSource" placeholder="Source / verification notes"><label><input id="nVacant" type="checkbox" style="width:22px">Vacant</label><label><input id="nTax" type="checkbox" style="width:22px">Tax issue</label><label><input id="nFore" type="checkbox" style="width:22px">Foreclosure</label><label><input id="nAbsentee" type="checkbox" style="width:22px">Absentee owner</label><input id="nOwner" placeholder="Owner Name"><div class="row"><input id="nPhone" placeholder="Phone"><input id="nEmail" placeholder="Email"></div><input id="nMail" placeholder="Mailing Address (if different)"><input id="nNotes" placeholder="Notes - last contact, follow-up, motivation"><select id="nCounty"><option>Polk</option><option>Hillsborough</option><option>Orange</option></select><button class="btn" onclick="addLead()">Add Lead</button>
 <p><a href="https://www.floridarealtors.org/law-ethics/library/florida-real-estate-contract-laws">Florida residential contract guidance</a> · <a href="https://www.floridarealtors.org/form-descriptions">Florida Realtors forms catalog, including vacant land</a></p>
+<section id="leadResearch" class="panel hidden" aria-labelledby="leadResearchTitle">
+<h3 id="leadResearchTitle">Property research</h3>
+<form id="leadResearchForm">
+<div id="landChecks">
+<p>Confirm each item against your buying criteria and record the evidence. Each confirmed item earns 20 points.</p>
+<div id="landCriteria"></div>
+<label>Due diligence evidence <textarea name="landEvidence" maxlength="2000"></textarea></label>
+</div>
+<label>Matched foreclosure case number <input name="researchCase" maxlength="80"></label>
+<label>Official case URL <input name="researchCaseUrl" type="url" maxlength="500"></label>
+<label>Parcel match evidence <input name="researchMatch" maxlength="300" placeholder="Record showing this parcel ID or address"></label>
+<label>Comparable sales evidence <textarea name="researchComps" maxlength="2000" placeholder="Parcel, sale date, price, and official record link for each comparable"></textarea></label>
+<label>Estimated market value ($) <input name="researchValue" type="number" min="0.01" step="0.01"></label>
+<label>Estimated total debt and liens ($) <input name="researchDebt" type="number" min="0" step="0.01"></label>
+<label>Value and debt evidence <textarea name="researchEquitySource" maxlength="1000"></textarea></label>
+<label>Owner of record <input name="researchOwner" maxlength="150"></label>
+<label>Mailing address of record <input name="researchMail" maxlength="250"></label>
+<label>Official owner record URL <input name="researchOwnerUrl" type="url" maxlength="500"></label>
+<button type="submit">Save research</button> <button type="button" onclick="closeLeadResearch()">Close research</button>
+</form>
+<p id="leadResearchStatus" role="status"></p>
+<p><a href="https://www.polkclerkfl.gov/292/Real-Estate-Resources">Polk foreclosure and recorded instruments</a> · <a href="https://www.polkpa.org/">Polk owner and property records</a> · <a href="https://www.floridarevenue.com/property/Pages/DataPortal_RequestAssessmentRollGISData.aspx">Florida official sales data</a></p>
+</section>
 <h3>Offer Calculator</h3><div class="greenBox"><label>After Repair Value (ARV) $</label><input id="arv" type="number" value="180000"><label>Repair Cost $</label><input id="rep" type="number" value="25000"><label>Your Wholesale Fee $</label><input id="fee" type="number" value="10000"><button class="btn orange" onclick="calcOffer()">Calculate Max Offer</button><p id="offerOut" style="font-weight:800;font-size:18px"></p><p class="small">Formula: (ARV x 70%) - Repairs - Fee = Max Offer. Estimate only, check comps.</p></div></div>
 <div id="view-kanban" class="panel hidden"><h2>Kanban</h2><div id="kanban"></div></div>
 <div id="view-vault" class="panel hidden"><h2>Vault — Hot 80+</h2><p class="small">New entries require a score of 80+. Previously saved entries retain their actual score and status.</p><div id="vaultList"></div></div>
@@ -599,7 +622,7 @@ function render(){
  let badge=document.getElementById('modeBadge');badge.textContent=document.getElementById('cloudMsg').textContent;
  document.getElementById('logs').innerHTML=logs.length?logs.map(l=>`<div class="log"><b>${escapeHtml(l.d)} — ${escapeHtml(l.c)}</b><br>Found ${escapeHtml(l.found)} • Hot ${escapeHtml(l.hot)} • Fetched contacts 0 • Vaulted ${escapeHtml(l.vaulted)} • Surplus Checked ${escapeHtml(l.sFound||0)}</div>`).join(''):'<p class="small">No processing runs yet.</p>';
  let q=(document.getElementById('search')?.value||'').toLowerCase(); let fc=document.getElementById('fCounty')?.value||''; let fs=document.getElementById('fScore')?.value||'';
- document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div>${l.c === 'Polk' && /^\d{18}$/.test(l.parcelId) ? `<a href="${escapeHtml(polkParcelUrl("PARCELID = '" + l.parcelId + "'",1))}">Official Polk parcel record</a>` : ''}<div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${leadContactActions(l.phone)}<button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
+ document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div>${researchSummary(l)}${l.c === 'Polk' && /^\d{18}$/.test(l.parcelId) ? `<a href="${escapeHtml(polkParcelUrl("PARCELID = '" + l.parcelId + "'",1))}">Official Polk parcel record</a>` : ''}<div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${leadContactActions(l.phone)}<button type="button" onclick="openLeadResearch(${i})">Research</button><button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
  document.getElementById('vaultList').innerHTML=leads.filter(l=>l.vault).map(l=>`<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l)}<div class="small">${escapeHtml(l.c)} • ${escapeHtml(l.owner)} • ${escapeHtml(l.phone||'Not supplied')} • ${escapeHtml(l.email||'')}</div></div>`).join('')||'<p class="small">Vault is empty. Process saved records or add a qualifying lead.</p>';
  document.getElementById('kanban').innerHTML=['Hot','Warm','Cold'].map(s=>`<h3>${s}</h3>`+leads.filter(l=>labelOf(scoreOf(l))===s).map(l=>`<div class="lead">${escapeHtml(l.a)} ${acceptanceBadge(l)}</div>`).join('')).join('');
  let fs2=document.getElementById('fSurplus')?.value||''; let fc2=document.getElementById('fSurplusCounty')?.value||'';
@@ -728,6 +751,86 @@ parcelForm.addEventListener('submit', async event => {
    : error.message;
  } finally {
   button.disabled = false;
+ }
+});
+const landCriteria = [
+ ['landSize','Location and acreage fit'],
+ ['landAccess','Legal access confirmed'],
+ ['landUse','Zoning supports intended use'],
+ ['landUtilities','Utilities or service alternatives confirmed'],
+ ['landConstraints','Flood, wetlands, and site constraints reviewed']
+];
+const researchForm = document.getElementById('leadResearchForm');
+const researchStatus = document.getElementById('leadResearchStatus');
+const researchFields = ['landEvidence','researchCase','researchCaseUrl','researchMatch','researchComps',
+ 'researchValue','researchDebt','researchEquitySource','researchOwner','researchMail','researchOwnerUrl'];
+let researchLead = null;
+document.getElementById('landCriteria').innerHTML = landCriteria.map(([key,label]) =>
+ `<label><input style="width:auto" type="checkbox" name="${key}"> ${label}</label>`).join(' ');
+
+function landScore(lead) {
+ return landCriteria.filter(([key]) => lead[key] === true).length * 20;
+}
+function researchSummary(lead) {
+ const parts = [];
+ if (lead.propertyType === 'Vacant Land') parts.push('Land fit ' + landScore(lead) + '/100');
+ if (lead.researchValue > 0 && typeof lead.researchDebt === 'number') {
+  const amount = lead.researchValue - lead.researchDebt;
+  parts.push('Estimated equity ' + fmt(amount) + ' (' + (amount / lead.researchValue * 100).toFixed(1) + '%)');
+ }
+ if (lead.researchCase && lead.researchMatch) parts.push('Recorded foreclosure match ' + lead.researchCase);
+ return parts.length ? `<div class="small">${escapeHtml(parts.join(' · '))}</div>` : '';
+}
+function openLeadResearch(index) {
+ researchLead = leads[index];
+ if (!researchLead) return;
+ document.getElementById('leadResearchTitle').textContent = 'Research for ' + researchLead.a;
+ document.getElementById('landChecks').classList.toggle('hidden', researchLead.propertyType !== 'Vacant Land');
+ for (const field of researchFields) researchForm.elements.namedItem(field).value = researchLead[field] ?? '';
+ for (const [key] of landCriteria) researchForm.elements.namedItem(key).checked = researchLead[key] === true;
+ researchStatus.textContent = '';
+ const panel = document.getElementById('leadResearch');
+ panel.classList.remove('hidden');
+ panel.scrollIntoView({block:'start'});
+}
+function closeLeadResearch() {
+ researchLead = null;
+ document.getElementById('leadResearch').classList.add('hidden');
+}
+researchForm.addEventListener('submit', event => {
+ event.preventDefault();
+ const index = leads.indexOf(researchLead);
+ if (index < 0) {
+  researchStatus.textContent = 'Reopen this property from Property Leads.';
+  return;
+ }
+ try {
+  const data = new FormData(researchForm);
+  const fields = Object.fromEntries(researchFields.map(key => [key,data.get(key).trim()]));
+  for (const key of ['researchCaseUrl','researchOwnerUrl']) {
+   if (fields[key] && new URL(fields[key]).protocol !== 'https:') throw Error('Use an HTTPS record URL.');
+  }
+  if ([fields.researchCase,fields.researchCaseUrl,fields.researchMatch].some(Boolean)
+      && ![fields.researchCase,fields.researchCaseUrl,fields.researchMatch].every(Boolean)) {
+   throw Error('Enter a case number, official URL, and parcel match evidence.');
+  }
+  const hasEquity = fields.researchValue !== '' || fields.researchDebt !== '';
+  if (hasEquity && (!(Number(fields.researchValue) > 0) || fields.researchDebt === '' || !fields.researchEquitySource)) {
+   throw Error('Enter a positive value, debt including zero if documented, and the source evidence.');
+  }
+  if ((fields.researchOwner || fields.researchMail) && !fields.researchOwnerUrl) throw Error('Enter the official owner record URL.');
+  fields.researchValue = hasEquity ? nonnegative(fields.researchValue,'Market value') : null;
+  fields.researchDebt = hasEquity ? nonnegative(fields.researchDebt,'Debt') : null;
+  for (const [key] of landCriteria) fields[key] = researchLead.propertyType === 'Vacant Land' && data.has(key);
+  if (landScore(fields) && !fields.landEvidence) throw Error('Add evidence for the land criteria you confirmed.');
+  const updated = {...researchLead,...fields};
+  leads[index] = updated;
+  try { save(); } catch (error) { leads[index] = researchLead; throw error; }
+  researchLead = updated;
+  render();
+  researchStatus.textContent = 'Research saved.';
+ } catch (error) {
+  researchStatus.textContent = error.message;
  }
 });
 showTabs(); render();
