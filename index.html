@@ -36,7 +36,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <div class="cards"><div class="card"><b id="cTotal">0</b><span>Total Leads</span></div><div class="card"><b id="cHot">0</b><span>Hot Leads</span></div><div class="card"><b id="cVault">0</b><span>In Vault</span></div><div class="card"><b id="cInv">0</b><span>Buyers / Investors</span></div></div>
 <div class="panel"><h2>💰 Surplus Funds Summary</h2><div class="row"><div><b id="sTotal" style="font-size:22px">$0</b><div class="small">Estimated balance in saved cases</div></div><div><b id="sOpen" style="font-size:22px">0</b><div class="small">Open Surplus Cases</div></div></div><p class="small">Sale less debt is an estimate, not a verified distributable balance. Confirm fees, lien priority, claimant eligibility and deadlines with the Clerk or your attorney.</p></div>
 <div class="tabs" id="tabs"></div>
-<div id="view-dashboard" class="panel"><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. No live discovery, skip-tracing, background schedule or cloud sync is connected.</p>
+<div id="view-dashboard" class="panel"><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. Use Parcel Search to find Polk County properties. This processor works on saved records.</p>
 <div class="toggle"><label for="autoScore">Recalculate scores</label><input id="autoScore" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoVault">Move scores 80+ to Vault</label><input id="autoVault" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoSurplus">Review saved surplus cases</label><input id="autoSurplus" type="checkbox" checked style="width:22px"></div>
@@ -44,6 +44,20 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <button class="btn green" onclick="runAutomation()">PROCESS SAVED RECORDS</button>
 <button class="btn ghost" onclick="resetStarter()">Reset Starter Data</button>
 <h3>Processing Log</h3><div id="logs"></div></div>
+<section id="view-parcel-search" class="panel hidden">
+<h2>Polk County Parcel Search</h2>
+<p>Search official property records by city, street name, or parcel ID. Use the vacant land filter to narrow results by recorded land use.</p>
+<form id="parcelSearchForm">
+<label>City <input name="city" maxlength="50" placeholder="Bartow"></label>
+<label>Street name <input name="street" maxlength="50" placeholder="Main"></label>
+<label>Parcel ID <input name="parcel" maxlength="25"></label>
+<label>Land use <select name="use"><option value="">All land uses</option><option value="vacant">Vacant land</option></select></label>
+<button type="submit">Search parcels</button>
+</form>
+<p id="parcelSearchStatus" role="status"></p>
+<div id="parcelSearchResults"></div>
+<p><a href="https://www.polkpa.org/">Polk Property Appraiser</a> · <a href="https://www.polkclerkfl.gov/187/Public-Records-Searches/1000">Clerk foreclosure and tax-deed research</a></p>
+</section>
 <div id="view-leads" class="panel hidden"><h2>Property Leads</h2>
 <p class="small">Acceptance scores prioritize saved properties using recorded equity and distress signals. Hot starts at 80 and Warm starts at 50. Review the evidence before making an offer.</p>
 <label for="fLeadType">Property and distress filters</label>
@@ -212,7 +226,7 @@ function seed(preserve=false){
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
 let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
+const tabs=[['dashboard','Dashboard'],['parcel-search','Parcel Search'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
 function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render()}
 function runAutomation(){
@@ -585,7 +599,7 @@ function render(){
  let badge=document.getElementById('modeBadge');badge.textContent=document.getElementById('cloudMsg').textContent;
  document.getElementById('logs').innerHTML=logs.length?logs.map(l=>`<div class="log"><b>${escapeHtml(l.d)} — ${escapeHtml(l.c)}</b><br>Found ${escapeHtml(l.found)} • Hot ${escapeHtml(l.hot)} • Fetched contacts 0 • Vaulted ${escapeHtml(l.vaulted)} • Surplus Checked ${escapeHtml(l.sFound||0)}</div>`).join(''):'<p class="small">No processing runs yet.</p>';
  let q=(document.getElementById('search')?.value||'').toLowerCase(); let fc=document.getElementById('fCounty')?.value||''; let fs=document.getElementById('fScore')?.value||'';
- document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div><div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${leadContactActions(l.phone)}<button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
+ document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div>${l.c === 'Polk' && /^\d{18}$/.test(l.parcelId) ? `<a href="${escapeHtml(polkParcelUrl("PARCELID = '" + l.parcelId + "'",1))}">Official Polk parcel record</a>` : ''}<div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${leadContactActions(l.phone)}<button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
  document.getElementById('vaultList').innerHTML=leads.filter(l=>l.vault).map(l=>`<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l)}<div class="small">${escapeHtml(l.c)} • ${escapeHtml(l.owner)} • ${escapeHtml(l.phone||'Not supplied')} • ${escapeHtml(l.email||'')}</div></div>`).join('')||'<p class="small">Vault is empty. Process saved records or add a qualifying lead.</p>';
  document.getElementById('kanban').innerHTML=['Hot','Warm','Cold'].map(s=>`<h3>${s}</h3>`+leads.filter(l=>labelOf(scoreOf(l))===s).map(l=>`<div class="lead">${escapeHtml(l.a)} ${acceptanceBadge(l)}</div>`).join('')).join('');
  let fs2=document.getElementById('fSurplus')?.value||''; let fc2=document.getElementById('fSurplusCounty')?.value||'';
@@ -601,6 +615,121 @@ function render(){
  document.getElementById('invList').innerHTML=investors.filter(v=>!qi||v.n.toLowerCase().includes(qi)||(v.city||'').toLowerCase().includes(qi)||(v.box||'').toLowerCase().includes(qi)).map(v=>`<div class="lead"><b>${escapeHtml(v.n)}</b> <span class="pill surplus">${escapeHtml(v.type||'Buyer')}</span><div class="small"><b>CONTACT:</b> Phone: ${escapeHtml(v.p)} • Email: ${escapeHtml(v.e||'—')} • City: ${escapeHtml(v.city||'—')} • Max: ${v.max?fmt(v.max):'—'}<br>Buy Box: ${escapeHtml(v.box)}<br>Notes: ${escapeHtml(v.notes||'')}</div></div>`).join('');
 
 }
+const polkParcelQuery = 'https://gis.polkfl.gov/server/rest/services/Map_Property_Appraiser/MapServer/1/query';
+const polkParcelFields = 'PARCELID,DOR_USE_CODE_DESC,PROP_CITY,PROP_ADRNO,PROP_ADRDIR,PROP_ADRSTR,PROP_ADRSUF,PROP_UNITNO,TOT_ACREAGE';
+const parcelForm = document.getElementById('parcelSearchForm');
+const parcelResults = document.getElementById('parcelSearchResults');
+const parcelStatus = document.getElementById('parcelSearchStatus');
+
+function polkParcelUrl(where, limit) {
+ const params = new URLSearchParams({
+  f:'json', where, outFields:polkParcelFields, returnGeometry:'false',
+  orderByFields:'PARCELID', resultRecordCount:String(limit)
+ });
+ return polkParcelQuery + '?' + params;
+}
+
+function polkSearchConditions(form) {
+ const city = form.get('city').trim().toUpperCase();
+ const street = form.get('street').trim().toUpperCase();
+ const parcel = form.get('parcel').replace(/[\s-]/g,'');
+ if (!city && !street && !parcel) throw Error('Enter a city, street name, or parcel ID.');
+ if (parcel && !/^\d{18}$/.test(parcel)) throw Error('Enter an 18-digit Polk parcel ID.');
+ if ([city,street].some(value => value && !/^[A-Z0-9 .'-]{2,50}$/.test(value))) {
+  throw Error('Enter at least two letters or numbers for a city or street.');
+ }
+ const quote = value => value.replaceAll("'", "''");
+ const conditions = [];
+ if (city) conditions.push("UPPER(PROP_CITY) = '" + quote(city) + "'");
+ if (street) conditions.push("UPPER(PROP_ADRSTR) LIKE '" + quote(street) + "%'");
+ if (parcel) conditions.push("PARCELID = '" + parcel + "'");
+ if (form.get('use') === 'vacant') conditions.push("UPPER(DOR_USE_CODE_DESC) LIKE 'VACANT%'");
+ return conditions.join(' AND ');
+}
+
+function savePolkParcel(row) {
+ const parcelId = row.PARCELID;
+ const street = row.PROP_ADRSTR && Number(row.PROP_ADRNO) > 0
+  ? [row.PROP_ADRNO,row.PROP_ADRDIR,row.PROP_ADRSTR,row.PROP_ADRSUF,row.PROP_UNITNO].filter(Boolean).join(' ')
+  : '';
+ const address = street || 'Parcel ' + parcelId;
+ const saved = leads.find(lead => lead.c === 'Polk' && (
+  lead.parcelId === parcelId || (!lead.parcelId && lead.a.trim().toUpperCase() === address.toUpperCase()
+   && (!lead.city || lead.city.toUpperCase() === String(row.PROP_CITY || '').toUpperCase()))
+ ));
+ if (saved) {
+  parcelStatus.textContent = 'This property is already saved in Property Leads.';
+  return;
+ }
+ const lead = {
+  a:address, c:'Polk', city:row.PROP_CITY || '', parcelId,
+  propertyType:/^vacant\b/i.test(row.DOR_USE_CODE_DESC || '') ? 'Vacant Land' : '',
+  owner:'Unknown', equity:null, vault:0,
+  source:polkParcelUrl("PARCELID = '" + parcelId + "'",1),
+  notes:[row.DOR_USE_CODE_DESC, 'Parcel ' + parcelId].filter(Boolean).join(' · ')
+ };
+ lead.score = scoreOf(lead);
+ lead.status = labelOf(lead.score);
+ leads.unshift(lead);
+ try { save(); } catch (error) {
+  leads.shift();
+  parcelStatus.textContent = 'The property could not be saved on this device.';
+  return;
+ }
+ render();
+ parcelStatus.textContent = 'Saved to Property Leads. Acceptance Score ' + lead.score + '/100.';
+}
+
+parcelForm.addEventListener('submit', async event => {
+ event.preventDefault();
+ const button = parcelForm.querySelector('button');
+ if (button.disabled) return;
+ parcelResults.replaceChildren();
+ button.disabled = true;
+ try {
+  const where = polkSearchConditions(new FormData(parcelForm));
+  parcelStatus.textContent = 'Searching Polk County records…';
+  const response = await fetch(polkParcelUrl(where,26), {signal:AbortSignal.timeout(15000)});
+  if (!response.ok) throw Error('Polk parcel records could not be retrieved. Try again.');
+  const data = await response.json();
+  if (!Array.isArray(data.features)) throw Error('Polk parcel records are temporarily unavailable. Try again.');
+  const rows = new Map();
+  for (const feature of data.features) {
+   const row = feature?.attributes;
+   if (row && /^\d{18}$/.test(row.PARCELID)) rows.set(row.PARCELID,row);
+  }
+  for (const row of [...rows.values()].slice(0,25)) {
+   const card = document.createElement('article');
+   card.className = 'lead';
+   const title = document.createElement('strong');
+   title.textContent = [row.PROP_ADRNO || '',row.PROP_ADRDIR,row.PROP_ADRSTR,row.PROP_ADRSUF,row.PROP_UNITNO].filter(Boolean).join(' ') || 'Parcel ' + row.PARCELID;
+   const detail = document.createElement('p');
+   detail.textContent = [row.PROP_CITY,row.DOR_USE_CODE_DESC,'Parcel ' + row.PARCELID,
+    Number(row.TOT_ACREAGE) > 0 ? row.TOT_ACREAGE + ' acres' : 'Acreage unavailable'].filter(Boolean).join(' · ');
+   const official = document.createElement('a');
+   official.href = polkParcelUrl("PARCELID = '" + row.PARCELID + "'",1);
+   official.textContent = 'Official GIS record';
+   official.target = '_blank';
+   official.rel = 'noopener';
+   const saveButton = document.createElement('button');
+   saveButton.type = 'button';
+   saveButton.textContent = 'Save as lead';
+   saveButton.addEventListener('click',() => savePolkParcel(row));
+   card.append(title,detail,official,' ',saveButton);
+   parcelResults.append(card);
+  }
+  parcelStatus.textContent = rows.size
+   ? 'Showing ' + Math.min(rows.size,25) + ' parcels. Checked ' + new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour12:true}) + ' Eastern.'
+      + (data.features.length > 25 || data.exceededTransferLimit ? ' Narrow your search to see more relevant matches.' : '')
+   : 'No matching parcels found.';
+ } catch (error) {
+  parcelStatus.textContent = error.name === 'TimeoutError' || error instanceof TypeError
+   ? 'Polk parcel search is unavailable. Try again or use the Property Appraiser link.'
+   : error.message;
+ } finally {
+  button.disabled = false;
+ }
+});
 showTabs(); render();
 // Publishable project key only. Authentication tokens stay in memory.
 const CLOUD_URL='https://muieigdcixhcjuenxlci.supabase.co';
