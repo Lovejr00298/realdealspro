@@ -4,7 +4,7 @@ from io import BytesIO
 import json
 import math
 import re
-from urllib.request import urlopen
+import subprocess
 
 from openpyxl import load_workbook
 
@@ -12,8 +12,14 @@ REPORT = "https://www.hillsclerk.com/documents/d/guest/copy-of-weekly-tax-deed-s
 
 
 def fetch_candidates():
-    with urlopen(REPORT, timeout=20) as response:
-        workbook = load_workbook(BytesIO(response.read()), read_only=True, data_only=True)
+    download = subprocess.run(
+        ["curl", "--fail", "--silent", "--show-error", "--location",
+         "--proto", "=https", "--proto-redir", "=https",
+         "--connect-timeout", "8", "--max-time", "20", "--retry", "2",
+         "--max-filesize", "5242880", REPORT],
+        check=True, capture_output=True, timeout=65,
+    )
+    workbook = load_workbook(BytesIO(download.stdout), read_only=True, data_only=True)
     try:
         rows = iter(workbook["Tax Deed"].values)
         date_line = str(next(rows)[0])
