@@ -45,11 +45,14 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <button class="btn ghost" onclick="resetStarter()">Reset Starter Data</button>
 <h3>Processing Log</h3><div id="logs"></div></div>
 <section id="view-parcel-search" class="panel hidden">
-<h2>Polk County Parcel Search</h2>
-<p>Search official property records by city, street name, or parcel ID. Use the vacant land filter to narrow results by recorded land use.</p>
+<h2>Find Opportunities</h2>
+<label>County <select id="opportunityCounty"><option>Polk</option></select></label>
+<label>Opportunity type <select id="opportunityType"><option value="parcel">Property parcels</option><option value="vacant">Vacant land</option><option value="foreclosure">Foreclosure sales</option><option value="preforeclosure">Preforeclosure filings</option><option value="probate">Probate cases</option></select></label>
+<div id="opportunityParcels"><p>Search official property records by city, street name, or parcel ID. Use the vacant land filter to narrow results by recorded land use.</p>
 <form id="parcelSearchForm">
 <label>City <input name="city" maxlength="50" placeholder="Bartow"></label>
 <label>Street name <input name="street" maxlength="50" placeholder="Main"></label>
+<label>ZIP code <input name="zip" inputmode="numeric" maxlength="5" pattern="[0-9]{5}"></label>
 <label>Parcel ID <input name="parcel" maxlength="25"></label>
 <label>Land use <select name="use"><option value="">All land uses</option><option value="vacant">Vacant land</option></select></label>
 <button type="submit">Search parcels</button>
@@ -57,6 +60,18 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <p id="parcelSearchStatus" role="status"></p>
 <div id="parcelSearchResults"></div>
 <p><a href="https://www.polkpa.org/">Polk Property Appraiser</a> · <a href="https://www.polkclerkfl.gov/187/Public-Records-Searches/1000">Clerk foreclosure and tax-deed research</a></p>
+</div>
+<div id="opportunityCourt" class="hidden">
+<p id="opportunityCourtNote"></p>
+<p><a id="opportunityCourtSource" href="https://pro.polkcountyclerk.net/PRO" target="_blank" rel="noopener">Open official search</a></p>
+<form id="opportunityCaseForm">
+<label>Case number <input name="caseNo" maxlength="80" required></label>
+<label>Verified property address or parcel ID <input name="property" maxlength="160" required></label>
+<label>Official source URL <input name="source" type="url" maxlength="500" required></label>
+<button type="submit">Prefill case review</button>
+</form>
+<p id="opportunityCaseStatus" role="status"></p>
+</div>
 </section>
 <div id="view-leads" class="panel hidden"><h2>Property Leads</h2>
 <p class="small">Acceptance scores prioritize saved properties using recorded equity and distress signals. Hot starts at 80 and Warm starts at 50. Review the evidence before making an offer.</p>
@@ -76,7 +91,13 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <label>Maximum auction bid ($) <input name="bidLimit" type="number" min="0" step="0.01"></label>
 <label>Limit assumptions and open issues <textarea name="buyNotes" maxlength="1000" placeholder="Repairs, fees, carrying costs, title, liens and reserves"></textarea></label>
 </fieldset>
+<fieldset><legend>Probate review</legend>
+<label>Probate case number <input name="probateCase" maxlength="80"></label>
+<label>Official probate source URL <input name="probateSource" type="url" maxlength="500"></label>
+<label>Property match and authority-to-sell evidence <textarea name="probateEvidence" maxlength="1000"></textarea></label>
+</fieldset>
 <fieldset><legend>Bankruptcy review</legend>
+<p><a href="https://pacer.uscourts.gov/find-case" target="_blank" rel="noopener">Find the federal case in PACER</a></p>
 <label>Status <select name="bankruptcyState"><option value="">No indicator recorded</option><option value="pending">Needs review</option><option value="recorded">Review documented</option></select></label>
 <label>Federal court <input name="bankruptcyCourt" maxlength="150"></label>
 <label>Bankruptcy case number <input name="bankruptcyCase" maxlength="80"></label>
@@ -268,7 +289,7 @@ function seed(preserve=false){
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
 let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['parcel-search','Parcel Search'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
+const tabs=[['dashboard','Dashboard'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
 function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render()}
 function runAutomation(){
@@ -675,15 +696,18 @@ function polkParcelUrl(where, limit) {
 
 function polkSearchConditions(form) {
  const city = form.get('city').trim().toUpperCase();
+ const zip = form.get('zip').trim();
  const street = form.get('street').trim().toUpperCase();
  const parcel = form.get('parcel').replace(/[\s-]/g,'');
- if (!city && !street && !parcel) throw Error('Enter a city, street name, or parcel ID.');
+ if (!city && !street && !parcel && !zip) throw Error('Enter a city, street name, ZIP code, or parcel ID.');
+ if (zip && !/^\d{5}$/.test(zip)) throw Error('Enter a five-digit ZIP code.');
  if (parcel && !/^\d{18}$/.test(parcel)) throw Error('Enter an 18-digit Polk parcel ID.');
  if ([city,street].some(value => value && !/^[A-Z0-9 .'-]{2,50}$/.test(value))) {
   throw Error('Enter at least two letters or numbers for a city or street.');
  }
  const quote = value => value.replaceAll("'", "''");
  const conditions = [];
+ if (zip) conditions.push("PROP_ZIP = '" + zip + "'");
  if (city) conditions.push("UPPER(PROP_CITY) = '" + quote(city) + "'");
  if (street) conditions.push("UPPER(PROP_ADRSTR) LIKE '" + quote(street) + "%'");
  if (parcel) conditions.push("PARCELID = '" + parcel + "'");
@@ -730,12 +754,14 @@ parcelForm.addEventListener('submit', async event => {
  if (button.disabled) return;
  parcelResults.replaceChildren();
  button.disabled = true;
+ const requestedType = opportunityType.value;
  try {
   const where = polkSearchConditions(new FormData(parcelForm));
   parcelStatus.textContent = 'Searching Polk County records…';
   const response = await fetch(polkParcelUrl(where,26), {signal:AbortSignal.timeout(15000)});
   if (!response.ok) throw Error('Polk parcel records could not be retrieved. Try again.');
   const data = await response.json();
+  if (opportunityType.value !== requestedType) return;
   if (!Array.isArray(data.features)) throw Error('Polk parcel records are temporarily unavailable. Try again.');
   const rows = new Map();
   for (const feature of data.features) {
@@ -785,6 +811,7 @@ const researchForm = document.getElementById('leadResearchForm');
 const researchStatus = document.getElementById('leadResearchStatus');
 const researchFields = ['landEvidence','researchCase','researchCaseUrl','researchMatch','researchComps',
  'researchValue','researchDebt','researchEquitySource','researchOwner','researchMail','researchOwnerUrl',
+ 'probateCase','probateSource','probateEvidence',
  'buyLocation','buyUse','buyAcres','buyPrice','offerLimit','bidLimit','buyNotes',
  'bankruptcyState','bankruptcyCourt','bankruptcyCase','bankruptcyFiled','bankruptcyUrl','bankruptcyVerified','bankruptcyNotes'];
 let researchLead = null;
@@ -804,6 +831,7 @@ function researchSummary(lead) {
  for (const [field,label] of [['offerLimit','Maximum offer'],['bidLimit','Maximum bid']]) {
   if (typeof lead[field] === 'number') parts.push(label + ' ' + fmt(lead[field]));
  }
+ if (lead.probateCase) parts.push('Probate review ' + lead.probateCase);
  if (lead.bankruptcyState === 'pending') parts.push('Bankruptcy review needed');
  if (lead.bankruptcyState === 'recorded') parts.push('Bankruptcy review documented ' + lead.bankruptcyVerified);
  if (lead.researchCase && lead.researchMatch) parts.push('Recorded foreclosure match ' + lead.researchCase);
@@ -835,7 +863,7 @@ researchForm.addEventListener('submit', event => {
  try {
   const data = new FormData(researchForm);
   const fields = Object.fromEntries(researchFields.map(key => [key,data.get(key).trim()]));
-  for (const key of ['researchCaseUrl','researchOwnerUrl','bankruptcyUrl']) {
+  for (const key of ['researchCaseUrl','researchOwnerUrl','bankruptcyUrl','probateSource']) {
    if (fields[key] && new URL(fields[key]).protocol !== 'https:') throw Error('Use an HTTPS record URL.');
   }
   if ([fields.researchCase,fields.researchCaseUrl,fields.researchMatch].some(Boolean)
@@ -845,6 +873,8 @@ researchForm.addEventListener('submit', event => {
   for (const key of ['buyAcres','buyPrice','offerLimit','bidLimit']) {
    fields[key] = fields[key] === '' ? null : nonnegative(fields[key], 'Buying criterion');
   }
+  const probate = [fields.probateCase, fields.probateSource, fields.probateEvidence];
+  if (probate.some(Boolean) && !probate.every(Boolean)) throw Error('Enter the probate case, official source and property match evidence.');
   const bankruptcyFields = ['bankruptcyCourt','bankruptcyCase','bankruptcyFiled','bankruptcyUrl','bankruptcyVerified','bankruptcyNotes'];
   if (!fields.bankruptcyState && bankruptcyFields.some(key => fields[key])) fields.bankruptcyState = 'pending';
   if (fields.bankruptcyState === 'recorded') {
@@ -909,6 +939,60 @@ function renderDailyReview() {
   queue.append(item);
  }
 }
+const opportunityType = document.getElementById('opportunityType');
+const opportunityCaseForm = document.getElementById('opportunityCaseForm');
+const opportunityCaseStatus = document.getElementById('opportunityCaseStatus');
+const courtSource = document.getElementById('opportunityCourtSource');
+const clerkCases = 'https://pro.polkcountyclerk.net/PRO';
+const courtOptions = {
+ foreclosure:['https://www.polkclerkfl.gov/169/Foreclosure-Sales','Search the official sale calendar, then copy a verified case here.'],
+ preforeclosure:[clerkCases,'Find the civil filing in Polk Records Online, then copy a verified case here.'],
+ probate:[clerkCases,'Find the probate case in Polk Records Online. Enter the exact address or parcel ID of a saved lead to prefill its private review.']
+};
+opportunityType.addEventListener('change', () => {
+ const type = opportunityType.value;
+ const court = courtOptions[type];
+ document.getElementById('opportunityParcels').classList.toggle('hidden', Boolean(court));
+ document.getElementById('opportunityCourt').classList.toggle('hidden', !court);
+ parcelForm.elements.namedItem('use').value = type === 'vacant' ? 'vacant' : '';
+ parcelResults.replaceChildren();
+ parcelStatus.textContent = '';
+ opportunityCaseForm.reset();
+ opportunityCaseStatus.textContent = '';
+ if (court) {
+  courtSource.href = court[0];
+  document.getElementById('opportunityCourtNote').textContent = court[1];
+ }
+});
+opportunityCaseForm.addEventListener('submit', event => {
+ event.preventDefault();
+ const data = new FormData(opportunityCaseForm);
+ const [caseNo,property,source] = ['caseNo','property','source'].map(key => data.get(key).trim());
+ try {
+  if (!caseNo || !property || new URL(source).protocol !== 'https:') throw Error('Enter a case number, property, and HTTPS record URL.');
+  if (opportunityType.value === 'probate') {
+   const identity = property.toUpperCase();
+   const matching = leads.map((lead,index) => ({lead,index})).filter(({lead}) =>
+    lead.c === 'Polk' && (lead.a.trim().toUpperCase() === identity || lead.parcelId === identity.replace(/[\s-]/g,'')));
+   if (matching.length !== 1) throw Error('Use the exact address or parcel ID of one saved Polk property lead.');
+   go('leads');
+   openLeadResearch(matching[0].index);
+   researchForm.elements.namedItem('probateCase').value = caseNo;
+   researchForm.elements.namedItem('probateSource').value = source;
+   researchForm.elements.namedItem('probateEvidence').value = '';
+   researchStatus.textContent = 'Confirm the property match and enter the supporting evidence before saving.';
+   return;
+  }
+  go('foreclosure');
+  foreclosureWatchForm.reset();
+  for (const [key,value] of Object.entries({...foreclosureWatch[foreclosureCaseKey('Polk',caseNo)],county:'Polk',caseNo,property,source})) {
+   foreclosureWatchForm.elements.namedItem(key).value = value;
+  }
+  document.getElementById('foreclosureWatchStatus').textContent = 'Review the source and set the current status before saving.';
+ } catch (error) {
+  opportunityCaseStatus.textContent = error.message;
+ }
+});
 showTabs(); render();
 // Publishable project key only. Authentication tokens stay in memory.
 const CLOUD_URL='https://muieigdcixhcjuenxlci.supabase.co';
