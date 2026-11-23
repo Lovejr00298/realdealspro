@@ -36,7 +36,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <div class="cards"><div class="card"><b id="cTotal">0</b><span>Total Leads</span></div><div class="card"><b id="cHot">0</b><span>Hot Leads</span></div><div class="card"><b id="cVault">0</b><span>In Vault</span></div><div class="card"><b id="cInv">0</b><span>Buyers / Investors</span></div></div>
 <div class="panel"><h2>💰 Surplus Funds Summary</h2><div class="row"><div><b id="sTotal" style="font-size:22px">$0</b><div class="small">Estimated balance in saved cases</div></div><div><b id="sOpen" style="font-size:22px">0</b><div class="small">Open Surplus Cases</div></div></div><p class="small">Sale less debt is an estimate, not a verified distributable balance. Confirm fees, lien priority, claimant eligibility and deadlines with the Clerk or your attorney.</p></div>
 <div class="tabs" id="tabs"></div>
-<div id="view-dashboard" class="panel"><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. Use Parcel Search to find Polk County properties. This processor works on saved records.</p>
+<div id="view-dashboard" class="panel"><h2>Daily Review</h2><p class="small">Review saved foreclosure cases and bankruptcy flags. Update sale dates from court records.</p><ul id="dailyReview"></ul><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. Use Parcel Search to find Polk County properties. This processor works on saved records.</p>
 <div class="toggle"><label for="autoScore">Recalculate scores</label><input id="autoScore" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoVault">Move scores 80+ to Vault</label><input id="autoVault" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoSurplus">Review saved surplus cases</label><input id="autoSurplus" type="checkbox" checked style="width:22px"></div>
@@ -67,6 +67,25 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <section id="leadResearch" class="panel hidden" aria-labelledby="leadResearchTitle">
 <h3 id="leadResearchTitle">Property research</h3>
 <form id="leadResearchForm">
+<fieldset><legend>Buying criteria and limits</legend>
+<label>Target location <input name="buyLocation" maxlength="150"></label>
+<label>Intended use <input name="buyUse" maxlength="150"></label>
+<label>Minimum acreage <input name="buyAcres" type="number" min="0" step="any"></label>
+<label>Target price ceiling ($) <input name="buyPrice" type="number" min="0" step="0.01"></label>
+<label>Maximum offer ($) <input name="offerLimit" type="number" min="0" step="0.01"></label>
+<label>Maximum auction bid ($) <input name="bidLimit" type="number" min="0" step="0.01"></label>
+<label>Limit assumptions and open issues <textarea name="buyNotes" maxlength="1000" placeholder="Repairs, fees, carrying costs, title, liens and reserves"></textarea></label>
+</fieldset>
+<fieldset><legend>Bankruptcy review</legend>
+<label>Status <select name="bankruptcyState"><option value="">No indicator recorded</option><option value="pending">Needs review</option><option value="recorded">Review documented</option></select></label>
+<label>Federal court <input name="bankruptcyCourt" maxlength="150"></label>
+<label>Bankruptcy case number <input name="bankruptcyCase" maxlength="80"></label>
+<label>Filing date <input name="bankruptcyFiled" type="date"></label>
+<label>Official docket or court URL <input name="bankruptcyUrl" type="url" maxlength="500"></label>
+<label>Last verified <input name="bankruptcyVerified" type="date"></label>
+<label>Review findings and authorized next action <textarea name="bankruptcyNotes" maxlength="1500"></textarea></label>
+<p class="small">Verify the case and current court orders before relying on a sale date or taking action. A documented review records your findings.</p>
+</fieldset>
 <div id="landChecks">
 <p>Confirm each item against your buying criteria and record the evidence. Each confirmed item earns 20 points.</p>
 <div id="landCriteria"></div>
@@ -114,7 +133,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <label>Court case number <input name="caseNo" required maxlength="80"></label>
 <label>Property address or parcel ID <input name="property" required maxlength="160"></label>
 <label>Court record URL <input type="url" name="source" required></label>
-<label>Status <select name="stage"><option>Filed</option><option>Sale scheduled</option><option>Sale completed</option><option>Sale canceled</option></select></label>
+<label>Scheduled sale date <input type="date" name="saleDate"></label><label>Status <select name="stage"><option>Filed</option><option>Sale scheduled</option><option>Sale completed</option><option>Sale canceled</option></select></label>
 <button type="submit">Save case status</button>
 </form>
 <p id="foreclosureWatchStatus" role="status"></p>
@@ -573,7 +592,7 @@ function renderForeclosureWatch() {
  review.replaceChildren();
  for (const entry of Object.values(foreclosureWatch)) {
   const row = document.createElement('li');
-  row.textContent = [entry.county, entry.caseNo, entry.property, entry.stage].join(' · ') + ' ';
+  row.textContent = [entry.county, entry.caseNo, entry.property, entry.stage, entry.saleDate ? 'Sale ' + entry.saleDate : ''].filter(Boolean).join(' · ') + ' ';
   const link = document.createElement('a');
   link.href = entry.source;
   link.textContent = 'Court record';
@@ -613,6 +632,7 @@ function matchesLeadType(lead, filter) {
 }
 function render(){
  renderForeclosureWatch();
+ renderDailyReview();
  if (tab === "county-funds") renderCountyFunds();
  document.getElementById('surplusOutreachEnabled').checked = localStorage.getItem(outreachSetting) === 'yes';
  let hot=leads.filter(l=>scoreOf(l)>=80).length; let vault=leads.filter(l=>l.vault).length;
@@ -622,7 +642,7 @@ function render(){
  let badge=document.getElementById('modeBadge');badge.textContent=document.getElementById('cloudMsg').textContent;
  document.getElementById('logs').innerHTML=logs.length?logs.map(l=>`<div class="log"><b>${escapeHtml(l.d)} — ${escapeHtml(l.c)}</b><br>Found ${escapeHtml(l.found)} • Hot ${escapeHtml(l.hot)} • Fetched contacts 0 • Vaulted ${escapeHtml(l.vaulted)} • Surplus Checked ${escapeHtml(l.sFound||0)}</div>`).join(''):'<p class="small">No processing runs yet.</p>';
  let q=(document.getElementById('search')?.value||'').toLowerCase(); let fc=document.getElementById('fCounty')?.value||''; let fs=document.getElementById('fScore')?.value||'';
- document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div>${researchSummary(l)}${l.c === 'Polk' && /^\d{18}$/.test(l.parcelId) ? `<a href="${escapeHtml(polkParcelUrl("PARCELID = '" + l.parcelId + "'",1))}">Official Polk parcel record</a>` : ''}<div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${leadContactActions(l.phone)}<button type="button" onclick="openLeadResearch(${i})">Research</button><button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
+ document.getElementById('leadsList').innerHTML=leads.map((l,i)=>({l,i})).filter(x=>{let l=x.l; return (!q||l.a.toLowerCase().includes(q)||l.owner.toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').includes(q)) && (!fc||l.c==fc) && (!fs||labelOf(scoreOf(l))===fs) && matchesLeadType(l, document.getElementById('fLeadType').value)}).map(x=>{let l=x.l,i=x.i; let cls=labelOf(scoreOf(l)).toLowerCase(); let matched=investors.filter(v=>matchesBuyer(v,l)).slice(0,5); return `<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l,cls)}<div class="small">${acceptanceDetails(l)}</div>${researchSummary(l)}${l.c === 'Polk' && /^\d{18}$/.test(l.parcelId) ? `<a href="${escapeHtml(polkParcelUrl("PARCELID = '" + l.parcelId + "'",1))}">Official Polk parcel record</a>` : ''}<div class="small"><b>CONTACT:</b> ${escapeHtml(l.owner)} • Phone: ${escapeHtml(l.phone||'Not supplied')} • Email: ${escapeHtml(l.email||'—')} • Mailing: ${escapeHtml(l.mail||'—')}<br>Notes: ${escapeHtml(l.notes||'—')} • ${escapeHtml(l.c)} • Equity ${l.equity==null?'Unknown':escapeHtml(l.equity)+'%'} ${l.vacant?'• Vacant':''} ${l.tax?'• Tax':''} ${l.fore?'• Foreclosure':''}</div><div class="small" style="margin-top:6px">Potential Buyers (confirm price and buy box): ${matched.length?matched.map(m=>escapeHtml(m.n)).join(', '):'No match'}</div><div class="flex" style="margin-top:8px">${l.bankruptcyState === "pending" ? "" : leadContactActions(l.phone)}<button type="button" onclick="openLeadResearch(${i})">Research</button><button onclick="moveVault(${i})">Vault</button><button onclick="delLead(${i})">Delete</button></div></div>`}).join('')||'<p class="small">No leads match.</p>';
  document.getElementById('vaultList').innerHTML=leads.filter(l=>l.vault).map(l=>`<div class="lead"><b>${escapeHtml(l.a)}</b> ${acceptanceBadge(l)}<div class="small">${escapeHtml(l.c)} • ${escapeHtml(l.owner)} • ${escapeHtml(l.phone||'Not supplied')} • ${escapeHtml(l.email||'')}</div></div>`).join('')||'<p class="small">Vault is empty. Process saved records or add a qualifying lead.</p>';
  document.getElementById('kanban').innerHTML=['Hot','Warm','Cold'].map(s=>`<h3>${s}</h3>`+leads.filter(l=>labelOf(scoreOf(l))===s).map(l=>`<div class="lead">${escapeHtml(l.a)} ${acceptanceBadge(l)}</div>`).join('')).join('');
  let fs2=document.getElementById('fSurplus')?.value||''; let fc2=document.getElementById('fSurplusCounty')?.value||'';
@@ -763,7 +783,9 @@ const landCriteria = [
 const researchForm = document.getElementById('leadResearchForm');
 const researchStatus = document.getElementById('leadResearchStatus');
 const researchFields = ['landEvidence','researchCase','researchCaseUrl','researchMatch','researchComps',
- 'researchValue','researchDebt','researchEquitySource','researchOwner','researchMail','researchOwnerUrl'];
+ 'researchValue','researchDebt','researchEquitySource','researchOwner','researchMail','researchOwnerUrl',
+ 'buyLocation','buyUse','buyAcres','buyPrice','offerLimit','bidLimit','buyNotes',
+ 'bankruptcyState','bankruptcyCourt','bankruptcyCase','bankruptcyFiled','bankruptcyUrl','bankruptcyVerified','bankruptcyNotes'];
 let researchLead = null;
 document.getElementById('landCriteria').innerHTML = landCriteria.map(([key,label]) =>
  `<label><input style="width:auto" type="checkbox" name="${key}"> ${label}</label>`).join(' ');
@@ -778,6 +800,11 @@ function researchSummary(lead) {
   const amount = lead.researchValue - lead.researchDebt;
   parts.push('Estimated equity ' + fmt(amount) + ' (' + (amount / lead.researchValue * 100).toFixed(1) + '%)');
  }
+ for (const [field,label] of [['offerLimit','Maximum offer'],['bidLimit','Maximum bid']]) {
+  if (typeof lead[field] === 'number') parts.push(label + ' ' + fmt(lead[field]));
+ }
+ if (lead.bankruptcyState === 'pending') parts.push('Bankruptcy review needed');
+ if (lead.bankruptcyState === 'recorded') parts.push('Bankruptcy review documented ' + lead.bankruptcyVerified);
  if (lead.researchCase && lead.researchMatch) parts.push('Recorded foreclosure match ' + lead.researchCase);
  return parts.length ? `<div class="small">${escapeHtml(parts.join(' · '))}</div>` : '';
 }
@@ -807,12 +834,23 @@ researchForm.addEventListener('submit', event => {
  try {
   const data = new FormData(researchForm);
   const fields = Object.fromEntries(researchFields.map(key => [key,data.get(key).trim()]));
-  for (const key of ['researchCaseUrl','researchOwnerUrl']) {
+  for (const key of ['researchCaseUrl','researchOwnerUrl','bankruptcyUrl']) {
    if (fields[key] && new URL(fields[key]).protocol !== 'https:') throw Error('Use an HTTPS record URL.');
   }
   if ([fields.researchCase,fields.researchCaseUrl,fields.researchMatch].some(Boolean)
       && ![fields.researchCase,fields.researchCaseUrl,fields.researchMatch].every(Boolean)) {
    throw Error('Enter a case number, official URL, and parcel match evidence.');
+  }
+  for (const key of ['buyAcres','buyPrice','offerLimit','bidLimit']) {
+   fields[key] = fields[key] === '' ? null : nonnegative(fields[key], 'Buying criterion');
+  }
+  const bankruptcyFields = ['bankruptcyCourt','bankruptcyCase','bankruptcyFiled','bankruptcyUrl','bankruptcyVerified','bankruptcyNotes'];
+  if (!fields.bankruptcyState && bankruptcyFields.some(key => fields[key])) fields.bankruptcyState = 'pending';
+  if (fields.bankruptcyState === 'recorded') {
+   if (!bankruptcyFields.every(key => fields[key])) throw Error('Complete the court, case, filing date, source, verification date, and review findings.');
+   if (fields.bankruptcyVerified < fields.bankruptcyFiled || fields.bankruptcyVerified > new Date().toISOString().slice(0,10)) {
+    throw Error('Verification date must be on or after filing and on or before today.');
+   }
   }
   const hasEquity = fields.researchValue !== '' || fields.researchDebt !== '';
   if (hasEquity && (!(Number(fields.researchValue) > 0) || fields.researchDebt === '' || !fields.researchEquitySource)) {
@@ -833,6 +871,43 @@ researchForm.addEventListener('submit', event => {
   researchStatus.textContent = error.message;
  }
 });
+function renderDailyReview() {
+ const queue = document.getElementById('dailyReview');
+ queue.replaceChildren();
+ const add = (label, buttonLabel, action, source) => {
+  const item = document.createElement('li');
+  item.textContent = label + ' ';
+  if (source && source.startsWith('https://')) {
+   const link = document.createElement('a');
+   link.href = source;
+   link.textContent = 'Source';
+   item.append(link, ' ');
+  }
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = buttonLabel;
+  button.addEventListener('click',action);
+  item.append(button);
+  queue.append(item);
+ };
+ leads.forEach((lead,index) => {
+  if (lead.bankruptcyState === 'pending') add(lead.a + ' · Bankruptcy review needed', 'Review property', () => {
+   go('leads');
+   openLeadResearch(index);
+  }, lead.bankruptcyUrl);
+ });
+ for (const entry of Object.values(foreclosureWatch)) {
+  if (entry.stage === 'Sale canceled') continue;
+  const sold = entry.stage === 'Sale completed';
+  add([entry.property,entry.caseNo,entry.stage,entry.saleDate].filter(Boolean).join(' · '),
+   sold ? 'Surplus review' : 'Foreclosure Watch', () => go(sold ? 'surplus' : 'foreclosure'), entry.source);
+ }
+ if (!queue.childElementCount) {
+  const item = document.createElement('li');
+  item.textContent = 'No saved cases or bankruptcy flags to review.';
+  queue.append(item);
+ }
+}
 showTabs(); render();
 // Publishable project key only. Authentication tokens stay in memory.
 const CLOUD_URL='https://muieigdcixhcjuenxlci.supabase.co';
