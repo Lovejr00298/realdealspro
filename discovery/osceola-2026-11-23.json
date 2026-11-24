@@ -1,0 +1,1623 @@
+{
+  "status": "ok",
+  "stale": true,
+  "records": [
+    {
+      "taxDeedId": "155-2026",
+      "reportedBalance": 20754.5,
+      "reportDate": "2026-11-23",
+      "parcelId": "032528340700014223",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "172-2026",
+      "reportedBalance": 20346.87,
+      "reportDate": "2026-11-23",
+      "parcelId": "032528340700014216",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "190-2026",
+      "reportedBalance": 20925.76,
+      "reportDate": "2026-11-23",
+      "parcelId": "032528340700012200",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "193-2026",
+      "reportedBalance": 86385.71,
+      "reportDate": "2026-11-23",
+      "parcelId": "092529365300010060",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "194-2026",
+      "reportedBalance": 69278.3,
+      "reportDate": "2026-11-23",
+      "parcelId": "112630060907440030",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "195-2026",
+      "reportedBalance": 79708.21,
+      "reportDate": "2026-11-23",
+      "parcelId": "112630060907440040",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "216-2026",
+      "reportedBalance": 8988.95,
+      "reportDate": "2026-11-23",
+      "parcelId": "242833000033110010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "218-2026",
+      "reportedBalance": 4147.54,
+      "reportDate": "2026-11-23",
+      "parcelId": "252833000001610000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "145-2026",
+      "reportedBalance": 185873.81,
+      "reportDate": "2026-11-23",
+      "parcelId": "222630007700010450",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "082-2026",
+      "reportedBalance": 17143.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628610005640170",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "084-2026",
+      "reportedBalance": 35971.05,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628610006500040",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "101-2026",
+      "reportedBalance": 23257.35,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628612818090080",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "069-2026",
+      "reportedBalance": 8121.74,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1620",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "078-2026",
+      "reportedBalance": 10608.37,
+      "reportDate": "2026-11-23",
+      "parcelId": "182529184900011105",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "079-2026",
+      "reportedBalance": 22262.49,
+      "reportDate": "2026-11-23",
+      "parcelId": "182733272000011140",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "043-2026",
+      "reportedBalance": 14219.45,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "057-2026",
+      "reportedBalance": 15839.48,
+      "reportDate": "2026-11-23",
+      "parcelId": "032528340700011103",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "062-2026",
+      "reportedBalance": 47979.39,
+      "reportDate": "2026-11-23",
+      "parcelId": "1025293470000B0240",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "041-2026",
+      "reportedBalance": 3274.65,
+      "reportDate": "2026-11-23",
+      "parcelId": "182732000022330020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "044-2026",
+      "reportedBalance": 6651.01,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000K2380",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "002-2026",
+      "reportedBalance": 1122.06,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260002444001M",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "004-2026",
+      "reportedBalance": 5315.97,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160001431001J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "009-2026",
+      "reportedBalance": 3123.01,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260004341000N",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "014-2026",
+      "reportedBalance": 3463.56,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160001432001J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "017-2026",
+      "reportedBalance": 2629.99,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160001122002J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "018-2026",
+      "reportedBalance": 2035.39,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160004143007J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "015-2026",
+      "reportedBalance": 3037.27,
+      "reportDate": "2026-11-23",
+      "parcelId": "22252900U001240000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "020-2026",
+      "reportedBalance": 3449.75,
+      "reportDate": "2026-11-23",
+      "parcelId": "072732000024340000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "021-2026",
+      "reportedBalance": 1193.11,
+      "reportDate": "2026-11-23",
+      "parcelId": "082732000032340010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "022-2026",
+      "reportedBalance": 446.32,
+      "reportDate": "2026-11-23",
+      "parcelId": "19273200003114000F",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "023-2026",
+      "reportedBalance": 2384.3,
+      "reportDate": "2026-11-23",
+      "parcelId": "092527000000700000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "024-2026",
+      "reportedBalance": 29.92,
+      "reportDate": "2026-11-23",
+      "parcelId": "192529000002250000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "357-2025",
+      "reportedBalance": 1428.95,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100004212003C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "359-2025",
+      "reportedBalance": 73.48,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260002122007G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "362-2025",
+      "reportedBalance": 7.2,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012070",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "364-2025",
+      "reportedBalance": 4.9,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012460",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "365-2025",
+      "reportedBalance": 2.5,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012410",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "366-2025",
+      "reportedBalance": 4.2,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012340",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "367-2025",
+      "reportedBalance": 4.9,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011210",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "368-2025",
+      "reportedBalance": 45.41,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011200",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "345-2025",
+      "reportedBalance": 1104.65,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273100003331007D",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "348-2025",
+      "reportedBalance": 2982.93,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000B110000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "322-2023",
+      "reportedBalance": 502.59,
+      "reportDate": "2026-11-23",
+      "parcelId": "122731000024230020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "323-2025",
+      "reportedBalance": 325.47,
+      "reportDate": "2026-11-23",
+      "parcelId": "243134479000320010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "324-2025",
+      "reportedBalance": 87.21,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531433000014110",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "325-2023",
+      "reportedBalance": 6492.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199920241001E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "328-2025",
+      "reportedBalance": 334.77,
+      "reportDate": "2026-11-23",
+      "parcelId": "243134479000300210",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "329-2025",
+      "reportedBalance": 6042.96,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100001121003C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "330-2025",
+      "reportedBalance": 2568.02,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199930411004E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "332-2025",
+      "reportedBalance": 7057.62,
+      "reportDate": "2026-11-23",
+      "parcelId": "24273160003422002B",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "333-2025",
+      "reportedBalance": 5717.55,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100004414005C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "336-2025",
+      "reportedBalance": 1564.44,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531433000011640",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "337-2025",
+      "reportedBalance": 1901.35,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260002122003G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "340-2025",
+      "reportedBalance": 520.48,
+      "reportDate": "2026-11-23",
+      "parcelId": "132731999304120020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "341-2025",
+      "reportedBalance": 138.14,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531433000014970",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "342-2023",
+      "reportedBalance": 9963.87,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000B120000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "346-2025",
+      "reportedBalance": 3354.97,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100004311002C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "347-2025",
+      "reportedBalance": 219.75,
+      "reportDate": "2026-11-23",
+      "parcelId": "122731000031230000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "349-2025",
+      "reportedBalance": 19.25,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100004313001C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "353-2025",
+      "reportedBalance": 12438.82,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000D040000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "354-2025",
+      "reportedBalance": 463.55,
+      "reportDate": "2026-11-23",
+      "parcelId": "26273100001442003C",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "360-2025",
+      "reportedBalance": 2092.17,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531432000011330",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "361-2025",
+      "reportedBalance": 87.27,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531433000014990",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "148-2025",
+      "reportedBalance": 130.44,
+      "reportDate": "2026-11-23",
+      "parcelId": "19273200004234000F",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "305-2025",
+      "reportedBalance": 78.09,
+      "reportDate": "2026-11-23",
+      "parcelId": "182732000044440010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "318-2023",
+      "reportedBalance": 24029.43,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628611815520220",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "285-2025",
+      "reportedBalance": 2972.62,
+      "reportDate": "2026-11-23",
+      "parcelId": "362733000039200000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "286-2025",
+      "reportedBalance": 12446.35,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628610006000150",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "290-2025",
+      "reportedBalance": 3738.76,
+      "reportDate": "2026-11-23",
+      "parcelId": "362733000020500000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "294-2025",
+      "reportedBalance": 51219.82,
+      "reportDate": "2026-11-23",
+      "parcelId": "132528462400010140",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "302-2025",
+      "reportedBalance": 2596.47,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199950212002E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "248-2025",
+      "reportedBalance": 50832.85,
+      "reportDate": "2026-11-23",
+      "parcelId": "032530420800010360",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "283-2025",
+      "reportedBalance": 1600.52,
+      "reportDate": "2026-11-23",
+      "parcelId": "1332342780000C0210",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "292-2025",
+      "reportedBalance": 28.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012280",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "296-2025",
+      "reportedBalance": 55.37,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531433000010050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "297-2025",
+      "reportedBalance": 17444.27,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260004234000G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "162-2025",
+      "reportedBalance": 12232.84,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260004412002G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "225-2025",
+      "reportedBalance": 13.5,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011460",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "269-2025",
+      "reportedBalance": 2659.66,
+      "reportDate": "2026-11-23",
+      "parcelId": "102731000000300000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "189-2025",
+      "reportedBalance": 9986.89,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199920311002E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "049-2025",
+      "reportedBalance": 333.27,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012240",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "057-2025",
+      "reportedBalance": 70.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010510",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "097-2025",
+      "reportedBalance": 876.16,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000K2193",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "031-2025",
+      "reportedBalance": 10564.26,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260004213001G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "048-2025",
+      "reportedBalance": 11.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012190",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "058-2025",
+      "reportedBalance": 12.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011680",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "060-2025",
+      "reportedBalance": 50.78,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011310",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "061-2025",
+      "reportedBalance": 59.63,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012090",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "068-2025",
+      "reportedBalance": 50.78,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011340",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "023-2025",
+      "reportedBalance": 11424.85,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011120",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "024-2025",
+      "reportedBalance": 7696.01,
+      "reportDate": "2026-11-23",
+      "parcelId": "132731000021210020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "026-2025",
+      "reportedBalance": 3976.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "23273160004234002A",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "027-2025",
+      "reportedBalance": 5535.13,
+      "reportDate": "2026-11-23",
+      "parcelId": "23273160004231001A",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "028-2025",
+      "reportedBalance": 1920.87,
+      "reportDate": "2026-11-23",
+      "parcelId": "23273160004314002A",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "029-2025",
+      "reportedBalance": 7718.18,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260002413002M",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "327-2024",
+      "reportedBalance": 1198.24,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010440",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "329-2024",
+      "reportedBalance": 1424.63,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010470",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "033-2025",
+      "reportedBalance": 10728.46,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273100002341001D",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "333-2024",
+      "reportedBalance": 703.47,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010420",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "334-2024",
+      "reportedBalance": 1107.91,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010430",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "335-2024",
+      "reportedBalance": 1465.9,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010450",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "336-2024",
+      "reportedBalance": 1468.17,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010460",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "034-2025",
+      "reportedBalance": 6627.65,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1230",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "035-2025",
+      "reportedBalance": 1722.89,
+      "reportDate": "2026-11-23",
+      "parcelId": "142731000041330010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "358-2024",
+      "reportedBalance": 654.43,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012060",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "036-2025",
+      "reportedBalance": 3131.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199950232001E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "038-2025",
+      "reportedBalance": 8096.99,
+      "reportDate": "2026-11-23",
+      "parcelId": "23273160004144000A",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "039-2025",
+      "reportedBalance": 9210.02,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000K0470",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "040-2025",
+      "reportedBalance": 1676.71,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L0610",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "041-2025",
+      "reportedBalance": 13520.95,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260001222001N",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "042-2025",
+      "reportedBalance": 14777.13,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1800",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "044-2025",
+      "reportedBalance": 5372.59,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L2820",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "046-2025",
+      "reportedBalance": 11663.9,
+      "reportDate": "2026-11-23",
+      "parcelId": "202833000003400000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "051-2025",
+      "reportedBalance": 11450.11,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199910121003E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "005-2025",
+      "reportedBalance": 858.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011070",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "053-2025",
+      "reportedBalance": 9603.22,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L3090",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "008-2025",
+      "reportedBalance": 1508.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011280",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "009-2025",
+      "reportedBalance": 1228.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011180",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "010-2025",
+      "reportedBalance": 1884.52,
+      "reportDate": "2026-11-23",
+      "parcelId": "172732000023120000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "011-2025",
+      "reportedBalance": 2719.22,
+      "reportDate": "2026-11-23",
+      "parcelId": "072732000024230000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "012-2025",
+      "reportedBalance": 1884.86,
+      "reportDate": "2026-11-23",
+      "parcelId": "122731000033440010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "013-2025",
+      "reportedBalance": 11916.54,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260002113001M",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "014-2025",
+      "reportedBalance": 2057.22,
+      "reportDate": "2026-11-23",
+      "parcelId": "24273160003122000B",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "015-2025",
+      "reportedBalance": 1754.61,
+      "reportDate": "2026-11-23",
+      "parcelId": "142731000042120020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "016-2025",
+      "reportedBalance": 40.84,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000B210000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "017-2025",
+      "reportedBalance": 40.85,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000C290000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "018-2025",
+      "reportedBalance": 10816.84,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260002431002M",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "019-2025",
+      "reportedBalance": 1706.03,
+      "reportDate": "2026-11-23",
+      "parcelId": "24273160003322000B",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "020-2025",
+      "reportedBalance": 4965.07,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199920111025E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "021-2025",
+      "reportedBalance": 40.84,
+      "reportDate": "2026-11-23",
+      "parcelId": "26313400000B220000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "002-2025",
+      "reportedBalance": 480.34,
+      "reportDate": "2026-11-23",
+      "parcelId": "172732000023340000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "022-2025",
+      "reportedBalance": 5164.44,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199920111007E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "240-2024",
+      "reportedBalance": 16.89,
+      "reportDate": "2026-11-23",
+      "parcelId": "243134479000150310",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "003-2025",
+      "reportedBalance": 20342.3,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011110",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "328-2024",
+      "reportedBalance": 20503.71,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012270",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "331-2024",
+      "reportedBalance": 3969.57,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010410",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "342-2024",
+      "reportedBalance": 25879.71,
+      "reportDate": "2026-11-23",
+      "parcelId": "112528370000220020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "345-2024",
+      "reportedBalance": 40916.08,
+      "reportDate": "2026-11-23",
+      "parcelId": "19252900U001860000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "304-2024",
+      "reportedBalance": 766.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "162527000000110000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "305-2024",
+      "reportedBalance": 436.75,
+      "reportDate": "2026-11-23",
+      "parcelId": "092527000000800000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "306-2024",
+      "reportedBalance": 2014.51,
+      "reportDate": "2026-11-23",
+      "parcelId": "092732000031440000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "307-2024",
+      "reportedBalance": 1073.45,
+      "reportDate": "2026-11-23",
+      "parcelId": "142731000044410020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "308-2024",
+      "reportedBalance": 463.08,
+      "reportDate": "2026-11-23",
+      "parcelId": "112529000001060000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "309-2024",
+      "reportedBalance": 836.06,
+      "reportDate": "2026-11-23",
+      "parcelId": "172732000013410000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "313-2024",
+      "reportedBalance": 1365.48,
+      "reportDate": "2026-11-23",
+      "parcelId": "20273200003333000H",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "337-2024",
+      "reportedBalance": 969.07,
+      "reportDate": "2026-11-23",
+      "parcelId": "162629000000550000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "348-2024",
+      "reportedBalance": 52.74,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012560",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "349-2022",
+      "reportedBalance": 559.57,
+      "reportDate": "2026-11-23",
+      "parcelId": "162732000021320020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "356-2024",
+      "reportedBalance": 855.13,
+      "reportDate": "2026-11-23",
+      "parcelId": "162732000032440010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "357-2024",
+      "reportedBalance": 668.21,
+      "reportDate": "2026-11-23",
+      "parcelId": "182732000043210020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "359-2024",
+      "reportedBalance": 3388.33,
+      "reportDate": "2026-11-23",
+      "parcelId": "19273200003123000F",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "196-2024",
+      "reportedBalance": 774.63,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011560",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "217-2024",
+      "reportedBalance": 8654.63,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011550",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "236-2024",
+      "reportedBalance": 7596.22,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "249-2024",
+      "reportedBalance": 9137.77,
+      "reportDate": "2026-11-23",
+      "parcelId": "352733000039500000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "257-2024",
+      "reportedBalance": 3431.08,
+      "reportDate": "2026-11-23",
+      "parcelId": "162527000000260000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "259-2024",
+      "reportedBalance": 1640.74,
+      "reportDate": "2026-11-23",
+      "parcelId": "162527000000190000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "264-2024",
+      "reportedBalance": 2243.48,
+      "reportDate": "2026-11-23",
+      "parcelId": "032528000000720000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "265-2024",
+      "reportedBalance": 8445.86,
+      "reportDate": "2026-11-23",
+      "parcelId": "092732000024330000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "273-2024",
+      "reportedBalance": 3972.7,
+      "reportDate": "2026-11-23",
+      "parcelId": "172527000000210000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "275-2024",
+      "reportedBalance": 3883.18,
+      "reportDate": "2026-11-23",
+      "parcelId": "1730333290000B0050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "300-2024",
+      "reportedBalance": 11764.34,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011610",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "314-2024",
+      "reportedBalance": 5444.13,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012310",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "316-2024",
+      "reportedBalance": 1568.56,
+      "reportDate": "2026-11-23",
+      "parcelId": "19273200003413000F",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "318-2024",
+      "reportedBalance": 201.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "162527000043230000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "325-2024",
+      "reportedBalance": 642.15,
+      "reportDate": "2026-11-23",
+      "parcelId": "142731000012220050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "191-2024",
+      "reportedBalance": 60365.78,
+      "reportDate": "2026-11-23",
+      "parcelId": "182529185600016080",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "194-2024",
+      "reportedBalance": 26395.92,
+      "reportDate": "2026-11-23",
+      "parcelId": "022527412300013050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "224-2024",
+      "reportedBalance": 6792.39,
+      "reportDate": "2026-11-23",
+      "parcelId": "352733000037900000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "233-2024",
+      "reportedBalance": 7320.21,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010170",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "237-2024",
+      "reportedBalance": 3547.58,
+      "reportDate": "2026-11-23",
+      "parcelId": "162527000021330020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "238-2024",
+      "reportedBalance": 4620.95,
+      "reportDate": "2026-11-23",
+      "parcelId": "112528370000310030",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "251-2024",
+      "reportedBalance": 11514.18,
+      "reportDate": "2026-11-23",
+      "parcelId": "03252751710003134B",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "109-2024",
+      "reportedBalance": 21.5,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628610006520090",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "141-2024",
+      "reportedBalance": 47037.39,
+      "reportDate": "2026-11-23",
+      "parcelId": "252628613822080040",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "174-2024",
+      "reportedBalance": 1.5,
+      "reportDate": "2026-11-23",
+      "parcelId": "162630126400010180",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "043-2024",
+      "reportedBalance": 4013.68,
+      "reportDate": "2026-11-23",
+      "parcelId": "262833000011220000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "015-2024",
+      "reportedBalance": 91.1,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011220",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "027-2024",
+      "reportedBalance": 1577.51,
+      "reportDate": "2026-11-23",
+      "parcelId": "332528351001440120",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "034-2024",
+      "reportedBalance": 2735.26,
+      "reportDate": "2026-11-23",
+      "parcelId": "252531432000013970",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "037-2024",
+      "reportedBalance": 231.7,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010610",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "042-2024",
+      "reportedBalance": 8055.41,
+      "reportDate": "2026-11-23",
+      "parcelId": "072732000031310000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "044-2024",
+      "reportedBalance": 5387.51,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000K2880",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "046-2024",
+      "reportedBalance": 145.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "232833000043140010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "048-2024",
+      "reportedBalance": 118.42,
+      "reportDate": "2026-11-23",
+      "parcelId": "072732000011430000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "032-2024",
+      "reportedBalance": 269.98,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011590",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "033-2024",
+      "reportedBalance": 201.04,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011320",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "035-2024",
+      "reportedBalance": 199.3,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "036-2024",
+      "reportedBalance": 277.85,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010030",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "038-2024",
+      "reportedBalance": 288.31,
+      "reportDate": "2026-11-23",
+      "parcelId": "082731495000010380",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "039-2024",
+      "reportedBalance": 84.6,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010040",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "040-2024",
+      "reportedBalance": 256.45,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010180",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "041-2024",
+      "reportedBalance": 4839.33,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1640",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "008-2024",
+      "reportedBalance": 336.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010520",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "009-2024",
+      "reportedBalance": 336.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010600",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "010-2024",
+      "reportedBalance": 336.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010530",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "011-2024",
+      "reportedBalance": 336.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010540",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "012-2024",
+      "reportedBalance": 331.0,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010560",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "016-2024",
+      "reportedBalance": 1243.45,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L1703",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "017-2024",
+      "reportedBalance": 5371.81,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160004441001J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "018-2024",
+      "reportedBalance": 12685.47,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260005222001N",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "020-2024",
+      "reportedBalance": 9157.26,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260002423002M",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "021-2024",
+      "reportedBalance": 2955.99,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000L0510",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "022-2024",
+      "reportedBalance": 2992.32,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160004213001J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "023-2024",
+      "reportedBalance": 9961.72,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260004224001N",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "024-2024",
+      "reportedBalance": 2520.73,
+      "reportDate": "2026-11-23",
+      "parcelId": "35273160001441002J",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "025-2024",
+      "reportedBalance": 7351.79,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260001121002G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "026-2024",
+      "reportedBalance": 11.16,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199920111011E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "029-2024",
+      "reportedBalance": 106.08,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273100003321000D",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "005-2024",
+      "reportedBalance": 76.12,
+      "reportDate": "2026-11-23",
+      "parcelId": "31273260001331004N",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "001-2024",
+      "reportedBalance": 2838.76,
+      "reportDate": "2026-11-23",
+      "parcelId": "3627316000000K0350",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "003-2024",
+      "reportedBalance": 151.82,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012100",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "004-2024",
+      "reportedBalance": 4222.4,
+      "reportDate": "2026-11-23",
+      "parcelId": "30273260001421002G",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "007-2024",
+      "reportedBalance": 8092.31,
+      "reportDate": "2026-11-23",
+      "parcelId": "332528350000230137",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "013-2024",
+      "reportedBalance": 208.9,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300011060",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "200-2023",
+      "reportedBalance": 2775.84,
+      "reportDate": "2026-11-23",
+      "parcelId": "132528000002860000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "233-2023",
+      "reportedBalance": 2138.4,
+      "reportDate": "2026-11-23",
+      "parcelId": "25273199960441001E",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "236-2023",
+      "reportedBalance": 30.55,
+      "reportDate": "2026-11-23",
+      "parcelId": "182530142100010585",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "168-2023",
+      "reportedBalance": 278.78,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300012550",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "231-2023",
+      "reportedBalance": 7335.27,
+      "reportDate": "2026-11-23",
+      "parcelId": "162629000000500000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "232-2023",
+      "reportedBalance": 227.57,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010480",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "234-2023",
+      "reportedBalance": 8416.36,
+      "reportDate": "2026-11-23",
+      "parcelId": "1332342780000C0290",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "235-2023",
+      "reportedBalance": 8784.79,
+      "reportDate": "2026-11-23",
+      "parcelId": "172527000000130000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "238-2023",
+      "reportedBalance": 8278.12,
+      "reportDate": "2026-11-23",
+      "parcelId": "172527000000120000",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "217-2023",
+      "reportedBalance": 469.28,
+      "reportDate": "2026-11-23",
+      "parcelId": "112731000032430050",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "224-2023",
+      "reportedBalance": 2698.62,
+      "reportDate": "2026-11-23",
+      "parcelId": "112731000024140010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "225-2023",
+      "reportedBalance": 120.36,
+      "reportDate": "2026-11-23",
+      "parcelId": "122731000021330020",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "192-2023",
+      "reportedBalance": 5724.58,
+      "reportDate": "2026-11-23",
+      "parcelId": "072530267400010010",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "193-2023",
+      "reportedBalance": 8890.82,
+      "reportDate": "2026-11-23",
+      "parcelId": "072530267400010100",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "194-2023",
+      "reportedBalance": 262.35,
+      "reportDate": "2026-11-23",
+      "parcelId": "262630061300010160",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    },
+    {
+      "taxDeedId": "167-2015",
+      "reportedBalance": 128.96,
+      "reportDate": "2026-11-23",
+      "parcelId": "202629307200011270",
+      "source": "https://courts.osceolaclerk.com/reports/TaxDeedsSurplusFundsAvailableWeb.pdf"
+    }
+  ]
+}
