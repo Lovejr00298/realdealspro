@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - index.html
+      - 'discovery/**'
       - .github/workflows/county-pages.yml
   workflow_dispatch:
   schedule:
