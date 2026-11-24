@@ -132,7 +132,10 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <div id="view-vault" class="panel hidden"><h2>Vault — Hot 80+</h2><p class="small">New entries require a score of 80+. Previously saved entries retain their actual score and status.</p><div id="vaultList"></div></div>
 <section id="view-county-funds" class="panel hidden">
 <h2>County Unclaimed Funds</h2>
-<p><a href="https://www.polkclerkfl.gov/m/newsflash">Polk clerk notices</a> · <a href="https://www.duvalclerk.gov/departments/finance-and-accounting/unclaimed-funds">Duval clerk lookup</a> · <a href="https://www.fltreasurehunt.gov/">Florida state lookup</a></p>
+<label for="countyFundsBrowse">Browse by county</label>
+<select id="countyFundsBrowse" onchange="browseCountyFunds()"><option value="">Select county</option></select>
+<p id="countyFundsBrowseStatus" role="status"></p><div id="unclaimedNamedReport"></div>
+<p id="countyFundsLinks"><a data-county="Polk" href="https://www.polkclerkfl.gov/m/newsflash">Polk clerk notices</a> <a data-county="Duval" href="https://www.duvalclerk.gov/departments/finance-and-accounting/unclaimed-funds">Duval clerk lookup</a> <a href="https://www.fltreasurehunt.gov/">Florida state lookup</a></p>
 <p>Save a public notice as a research lead. Confirm availability with the holder. Saved entries are stored in this browser.</p>
 <form id="countyFundsForm">
 <label>County <input name="county" required></label>
@@ -186,9 +189,11 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <label for="sourceReference">Report title, date, or link</label><input id="sourceReference">
 <label for="sourceRows">Spreadsheet rows (without column headers)</label><textarea id="sourceRows" rows="5"></textarea>
 <button class="btn" type="button" onclick="importCountyCases()">Import cases for review</button><p id="sourceStatus" role="status"></p>
-</details><details><summary>County discovery · Needs verification</summary>
+</details><section aria-label="County discovery">
+<label for="discoveryCounty">Browse by county</label><select id="discoveryCounty" onchange="showCountyDiscovery();loadNamedReport('surplus')"><option value="">Select county</option></select>
+<label for="discoverySearch">Filter county results</label><input id="discoverySearch" placeholder="Case number or parcel ID" oninput="showCountyDiscovery()">
 <button type="button" class="btn" onclick="loadCountyDiscovery()">Check latest county scan</button>
-<p id="discoveryStatus" role="status"></p><div id="discoveryResults"></div></details>
+<p id="discoveryStatus" role="status"></p><div id="discoveryResults"></div><div id="surplusNamedReport"></div></section>
 <label for="surplusSearch">Search saved cases</label><input id="surplusSearch" placeholder="Case number, property, or former owner" oninput="render()"><p id="surplusReview" class="small"></p><p class="small">Review holds are internal and do not change planning dates.</p><div id="surplusList"></div><h3>Add Surplus Case</h3><label for="sAddr">Property address</label><input id="sAddr" autocomplete="off" placeholder="Property Address"><label for="sCase">Clerk case number</label><input id="sCase" autocomplete="off" placeholder="Clerk Case # e.g. 2025-CA-1234"><label for="sOwner2">Former owner</label><input id="sOwner2" autocomplete="off" placeholder="Former Owner"><div class="row"><div><label for="sSale">Sale price ($)</label><input id="sSale" autocomplete="off" type="number" placeholder="Sale Price $"></div><div><label for="sDebt">Debt owed ($)</label><input id="sDebt" autocomplete="off" type="number" placeholder="Debt Owed $"></div></div><label>Auction date (reference only)</label><input id="sAuction" type="date"><label>County</label><select id="sCounty"><option>Alachua</option><option>Baker</option><option>Bay</option><option>Bradford</option><option>Brevard</option><option>Broward</option><option>Calhoun</option><option>Charlotte</option><option>Citrus</option><option>Clay</option><option>Collier</option><option>Columbia</option><option>DeSoto</option><option>Dixie</option><option>Duval</option><option>Escambia</option><option>Flagler</option><option>Franklin</option><option>Gadsden</option><option>Gilchrist</option><option>Glades</option><option>Gulf</option><option>Hamilton</option><option>Hardee</option><option>Hendry</option><option>Hernando</option><option>Highlands</option><option>Hillsborough</option><option>Holmes</option><option>Indian River</option><option>Jackson</option><option>Jefferson</option><option>Lafayette</option><option>Lake</option><option>Lee</option><option>Leon</option><option>Levy</option><option>Liberty</option><option>Madison</option><option>Manatee</option><option>Marion</option><option>Martin</option><option>Miami-Dade</option><option>Monroe</option><option>Nassau</option><option>Okaloosa</option><option>Okeechobee</option><option>Orange</option><option>Osceola</option><option>Palm Beach</option><option>Pasco</option><option>Pinellas</option><option selected>Polk</option><option>Putnam</option><option>Santa Rosa</option><option>Sarasota</option><option>Seminole</option><option>St. Johns</option><option>St. Lucie</option><option>Sumter</option><option>Suwannee</option><option>Taylor</option><option>Union</option><option>Volusia</option><option>Wakulla</option><option>Walton</option><option>Washington</option></select><label>Planning rule</label><select id="sRule"><option value="review">Owner / other — manual review</option><option value="assignment">Foreclosure assignment — certificate filing + 60 days</option><option value="taxNonowner">Tax deed nonowner — mailed notice + 120 days</option><option value="manual">Manually confirmed planning date</option></select><label>Rule trigger date (certificate filing / mailed notice)</label><input id="sTrigger" type="date"><label>Manually confirmed planning date</label><input id="sManual" type="date"><label for="sSource">Clerk document or source reference</label><input id="sSource" autocomplete="off" placeholder="Clerk document / source reference"><label><input id="sConfirmed" type="checkbox" style="width:22px">I confirmed this rule and trigger for this claimant from the source</label><button class="btn green" onclick="addSurplus()">Add Surplus Case</button><p id="surplusMsg" role="status"></p></div>
 <div id="view-investors" class="panel hidden"><h2>Buyers / Investors List — Who To Sell To</h2><p class="small">This is your Buyers List. Add real buyers here. The 10 below are STARTER TEST buyers so you can see how matching works. Replace them with real buyers from REIA, Facebook groups, and closings. Do NOT call test numbers.</p><input id="searchInv" placeholder="Search buyer by name, city, buy box..." oninput="render()"><div id="invList"></div><h3>Add Buyer / Investor — Full Contact</h3><input id="iName" placeholder="Full Name"><div class="row"><input id="iPhone" placeholder="Phone"><input id="iEmail" placeholder="Email"></div><input id="iCity" placeholder="City They Buy In - e.g. Lakeland"><div class="row"><input id="iMax" placeholder="Max Price $"><select id="iType"><option>Cash Buyer</option><option>Hard Money</option><option>Fix & Flip</option><option>Buy & Hold / Rental</option><option>Land Buyer</option></select></div><input id="iBox" placeholder="Buy Box - e.g. 3 bed, Lakeland, $150k, fixer"><input id="iNotes" placeholder="Notes - last deal, follow-up"><button class="btn" onclick="addInvestor()">Add Buyer</button><div class="yellowBox" style="margin-top:12px"><b>Where to find real buyers in Polk:</b><p class="small">1) Polk REIA meetups in Lakeland / Winter Haven<br>2) Facebook groups: Polk County Real Estate Investors, Florida Cash Buyers<br>3) Title companies - ask who closes cash deals<br>4) County clerk - look up cash buyers on recent deeds<br>5) Add them here, then this app will auto-match them to Hot leads.</p></div></div>
 <div id="view-contracts" class="panel hidden"><h2>📄 Contracts — Worksheets</h2><div class="yellowBox"><b>Important:</b><p class="small">These are worksheets to help you gather info for your attorney / title company. They are NOT legal advice and NOT a binding contract by themselves. Have a Florida attorney or title company review any contract before you use it. Do not use a contract you do not understand.</p></div>
@@ -291,7 +296,7 @@ function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));local
 let tab='dashboard';
 const tabs=[['dashboard','Dashboard'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
-function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render()}
+function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadNamedReport('unclaimed')}
 function runAutomation(){
  const county=document.getElementById('county').value;let found=0,hot=0,vaulted=0;
  leads.forEach(l=>{if(l.c!==county)return;found++;if(document.getElementById('autoScore').checked){l.score=scoreOf(l);l.status=labelOf(l.score)}if(scoreOf(l)>=80){hot++;if(document.getElementById('autoVault').checked&&!l.vault){l.vault=1;vaulted++}}});
@@ -315,34 +320,45 @@ function genContract(kind){
 }
 function moveVault(i){if(!leads[i]||scoreOf(leads[i])<80)return alert('A score of 80 or more is required.');leads[i].vault=1;save();render();}
 function delLead(i){if(confirm('Delete this lead?')){leads.splice(i,1); save(); render();}}
+let countyDiscovery;
+function showCountyDiscovery(){
+ if(!countyDiscovery)return;
+ document.getElementById('discoveryResults').innerHTML=renderCountyDiscovery(
+  countyDiscovery, document.getElementById('discoveryCounty').value,
+  document.getElementById('discoverySearch').value.trim().toUpperCase());
+}
 async function loadCountyDiscovery(){
  const status=document.getElementById('discoveryStatus');
  status.textContent='Checking county reports…';
  try{
   const response=await fetch('./county-discovery.json',{cache:'no-store'});
   if(!response.ok)throw Error('No published county scan is available.');
-  const html=renderCountyDiscovery(await response.json());
-  document.getElementById('discoveryResults').innerHTML=html;
+  const batch=await response.json();
+  renderCountyDiscovery(batch);
+  countyDiscovery=batch;
+  showCountyDiscovery();
   status.textContent='County scan loaded. Verify each case with the clerk.';
  }catch(error){status.textContent=error.message;}
 }
-function renderCountyDiscovery(batch){
+function renderCountyDiscovery(batch, selected="", query=""){
  if(!batch||!batch.counties||!Number.isFinite(Date.parse(batch.fetchedAt)))throw Error('County scan format is invalid.');
+ if(!selected)return '<p>Select a county to view its records.</p>';
+ if(!Object.hasOwn(batch.counties,selected))return '<p>No published tax-deed report for this county. Use the clerk links or manual entry.</p>';
  const sections=[];
- for(const [county,result] of Object.entries(batch.counties)){
+ for(const [county,result] of [[selected,batch.counties[selected]]]){
   if(result.status!=='ok'){
    sections.push('<p>'+escapeHtml(county)+': source unavailable on this scan.</p>');
    continue;
   }
-  const records=result.records.filter(record=>typeof record.taxDeedId==='string'&&Number.isFinite(record.reportedBalance)&&record.reportedBalance>0);
+  const records=result.records.filter(record=>typeof record.taxDeedId==='string'&&Number.isFinite(record.reportedBalance)&&record.reportedBalance>0&&[record.taxDeedId,record.parcelId].some(value=>String(value||"").toUpperCase().includes(query)));
   const cards=records.map(record=>{
    const url=new URL(record.source);
-   const source=url.protocol==='https:'&&['app.pascoclerk.com','www.hillsclerk.com','www.marioncountyclerk.org','marioncountyclerk.org'].includes(url.hostname)
+   const source=url.protocol==='https:'&&['app.pascoclerk.com','www.hillsclerk.com','www.marioncountyclerk.org','marioncountyclerk.org','courts.osceolaclerk.com'].includes(url.hostname)
     ?` · <a href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Clerk report</a>`:'';
    return `<div class="lead"><b>${escapeHtml(record.taxDeedId)}</b> · ${fmt(record.reportedBalance)} reported balance${source}
     <div class="small">${escapeHtml(record.parcelId||'')}${record.reportDate?' · Report date '+escapeHtml(record.reportDate):''}</div></div>`;
   }).join('');
-  sections.push(`<details><summary>${escapeHtml(county)} · ${records.length} to review${result.stale ? " · Last verified report (refresh unavailable)" : ""}</summary>${cards}</details>`);
+  sections.push(`<details open><summary>${escapeHtml(county)} · ${records.length} to review${result.stale ? " · Last verified report (refresh unavailable)" : ""}</summary>${cards}</details>`);
  }
  return '<p>Scan time: '+escapeHtml(new Date(batch.fetchedAt).toLocaleString('en-US',{timeZone:'America/New_York'}))+' Eastern</p>'+sections.join('');
 }
@@ -543,6 +559,28 @@ function openSurplusSheet(index){
 }
 const countyFundsStorageKey = 'rdp_county_funds_research';
 const countyFundsForm = document.getElementById('countyFundsForm');
+for(const id of ['countyFundsBrowse','discoveryCounty']){
+ const select=document.getElementById(id);
+ for(const option of document.getElementById('sourceCounty').options){
+  if(option.value)select.append(option.cloneNode(true));
+ }
+}
+function browseCountyFunds(){
+ loadNamedReport('unclaimed');
+ const county=document.getElementById('countyFundsBrowse').value;
+ const links=document.querySelectorAll('#countyFundsLinks [data-county]');
+ let hasClerkLink=false;
+ for(const link of links){
+  link.hidden=Boolean(county)&&link.dataset.county!==county;
+  hasClerkLink ||= link.dataset.county===county;
+ }
+ if(county)countyFundsForm.elements.county.value=county;
+ document.getElementById('countyFundsBrowseStatus').textContent=county
+  ? hasClerkLink ? 'Open the clerk source for this county or save a notice below.'
+    : 'Use the state lookup or save a county notice below.'
+  : '';
+}
+
 
 countyFundsForm.addEventListener('submit', event => {
  event.preventDefault();
@@ -1001,6 +1039,57 @@ const cloudMsg=m=>{
  document.getElementById('cloudMsg').textContent=m;
  document.getElementById('modeBadge').textContent=m;
 };
+async function loadNamedReport(kind){
+ const surplusReport=kind==='surplus';
+ const countyField=document.getElementById(surplusReport?'discoveryCounty':'countyFundsBrowse');
+ const output=document.getElementById(surplusReport?'surplusNamedReport':'unclaimedNamedReport');
+ const request=Symbol();
+ output.namedRequest=request;
+ output.replaceChildren();
+ if(countyField.value!=='Marion')return;
+ if(!cloudSession){output.textContent='Sign in under Settings to view names.';return;}
+ const userId=cloudSession.user.id;
+ const isCurrent=()=>output.namedRequest===request&&cloudSession?.user.id===userId&&countyField.value==='Marion';
+ output.textContent='Loading Marion clerk names…';
+ try{
+  await cloudRefresh();
+  if(!isCurrent())return;
+  const rows=await cloudRequest('/rest/v1/county_report_snapshots?select=report_date,source,records&county=eq.Marion&kind=eq.'+kind+'&limit=1');
+  if(!isCurrent())return;
+  const report=rows[0];
+  if(!report){output.textContent='No Marion named report is available for this account.';return;}
+  const heading=document.createElement('h3');
+  heading.textContent=surplusReport?'Marion assessed names':'Marion outstanding checks';
+  const note=document.createElement('p');
+  note.textContent=surplusReport
+   ?'Clerk report '+report.report_date+'. Names are excerpts from the assessed-name field. Verify the full name and eligibility in the report.'
+   :'Clerk snapshot '+report.report_date+'. Listed check amounts require current confirmation.';
+  const source=document.createElement('a');
+  source.href=report.source;source.textContent='Open clerk PDF';
+  const filter=document.createElement('input');filter.type='search';filter.placeholder='Filter by name, case, parcel or check number';
+  filter.setAttribute('aria-label',filter.placeholder);
+  const list=document.createElement('ul');
+  const renderRows=()=>{
+   const query=filter.value.trim().toLowerCase();
+   const items=report.records.filter(row=>[row.name,row.taxDeedId,row.parcelId,row.reference].some(value=>String(value||'').toLowerCase().includes(query)));
+   list.replaceChildren(...items.map(row=>{
+    const item=document.createElement('li');
+    item.textContent=surplusReport
+     ?row.name+' · '+row.taxDeedId+' · '+row.parcelId+' · '+fmt(row.reportedBalance)
+     :row.name+' · Check '+row.reference+' · '+row.checkDate+' · '+fmt(row.amount);
+    return item;
+   }));
+   if(!items.length){const item=document.createElement('li');item.textContent='No matching records.';list.append(item);}
+  };
+  filter.addEventListener('input',renderRows);
+  renderRows();
+  output.replaceChildren(heading,note,source,filter,list);
+ }catch{if(isCurrent())output.textContent='Marion names are temporarily unavailable. Use the clerk lookup or try again.';}
+}
+function refreshNamedReports(){
+ loadNamedReport('surplus');
+ loadNamedReport('unclaimed');
+}
 function cloudSessionFrom(x){if(!x?.access_token||!x?.refresh_token||!x?.user?.id)throw Error('Incomplete sign-in response.');return {...x,expires_at:Number(x.expires_at)||Date.now()/1000+Number(x.expires_in||3600)}}
 async function cloudRequest(path,options={}){
  const response=await fetch(CLOUD_URL+path,{signal:AbortSignal.timeout(15000),...options,headers:{apikey:CLOUD_KEY,'Content-Type':'application/json',...(cloudSession?{Authorization:'Bearer '+cloudSession.access_token}:{}),...options.headers}});
@@ -1090,11 +1179,12 @@ async function syncWorkspace(){
  });
 }
 async function cloudLogin(){return cloudTask(async()=>{
- cloudMsg('Signing in…');cloudSession=null;cloudVersion=null;syncedSnapshot=null;syncPaused=false;document.getElementById('cloudActions').classList.add('hidden');
+ cloudMsg('Signing in…');cloudSession=null;refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;document.getElementById('cloudActions').classList.add('hidden');
  const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value;document.getElementById('cloudPassword').value='';
  if(!email||!password)throw Error('Enter your RealDealsPro™ email and password.');
  cloudSession=cloudSessionFrom(await cloudRequest('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})}));
  document.getElementById('cloudActions').classList.remove('hidden');
+ refreshNamedReports();
  const row=await readWorkspace();
  if(row&&workspaceSnapshot(row.data)===workspaceSnapshot(workspaceData()))markSynced(row.version,workspaceSnapshot(row.data));
  else cloudMsg(row?'Signed in. Load the cloud copy to start syncing. Download a backup first if you need these device records.':'Signed in. Review this device, then save it to start cloud sync.');
@@ -1126,7 +1216,7 @@ window.addEventListener('storage',event=>{
  }
 });
 }
-async function cloudLogout(){return cloudTask(async()=>{let failed=false;try{if(cloudSession)await cloudRequest('/auth/v1/logout',{method:'POST'})}catch{failed=true}cloudSession=null;cloudVersion=null;syncedSnapshot=null;syncPaused=false;clearTimeout(syncTimer);document.getElementById('cloudActions').classList.add('hidden');cloudMsg('Signed out on this page. Local records remain on this device.'+(failed?' Remote session revocation could not be confirmed.':''))})}
+async function cloudLogout(){return cloudTask(async()=>{let failed=false;try{if(cloudSession)await cloudRequest('/auth/v1/logout',{method:'POST'})}catch{failed=true}cloudSession=null;refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;clearTimeout(syncTimer);document.getElementById('cloudActions').classList.add('hidden');cloudMsg('Signed out on this page. Local records remain on this device.'+(failed?' Remote session revocation could not be confirmed.':''))})}
 
 function showCloudSignup(){if(cloudBusy)return;document.getElementById('cloudSignup').classList.toggle('hidden');}
 async function cloudSignup(){return cloudTask(async()=>{
