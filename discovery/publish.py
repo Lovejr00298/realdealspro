@@ -10,7 +10,7 @@ PUBLIC_FIELDS = ("taxDeedId", "reportedBalance", "source", "reportDate", "parcel
 
 def public_batch(batch):
     counties = {}
-    snapshot = Path(__file__).with_name("osceola-2026-11-23.json")
+    snapshot = Path(__file__).with_name("osceola-2026-11-24.json")
     sources = {**batch["counties"], "Osceola": json.loads(snapshot.read_text(encoding="utf-8"))}
     for county, result in sources.items():
         if result["status"] != "ok":
