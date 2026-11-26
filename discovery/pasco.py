@@ -40,11 +40,13 @@ def fetch_latest():
         links.feed(response.read().decode("utf-8", errors="replace"))
     if not links.workbooks:
         raise ValueError("No Pasco surplus workbook found on the clerk reports page")
-    _, url = max(links.workbooks)
+    report_stamp, url = max(links.workbooks)
+    report_date = datetime.strptime(report_stamp, "%Y%m%d").date().isoformat()
     with urlopen(url, timeout=20) as response:
         records = read_candidates(BytesIO(response.read()))
     for record in records:
         record["source"] = url
+        record["reportDate"] = report_date
     return records
 
 
