@@ -24,6 +24,63 @@ function orSuppress(contact, reason) {
   const list = orRead('rdp_suppression_v1', []);
   if (!list.includes(value)) orWrite('rdp_suppression_v1', [...list, value]);
   orLog('Opt-out recorded', value, reason);
+  if (cloudSession) cloudRequest('/rest/v1/outreach_suppression', {method: 'POST', headers: {Prefer: 'resolution=ignore-duplicates'}, body: JSON.stringify({contact: value, reason: String(reason || '').slice(0, 200)})}).catch(() => {});
+}
+
+let orProviders = null;
+async function orCloud(body) {
+  await cloudRefresh();
+  return cloudRequest('/functions/v1/outreach-send', {method: 'POST', body: JSON.stringify(body)});
+}
+
+async function orSyncCloud() {
+  if (!cloudSession) { orProviders = null; return; }
+  try {
+    orProviders = await orCloud({status: true});
+    const remote = await cloudRequest('/rest/v1/outreach_suppression?select=contact');
+    const list = new Set(orRead('rdp_suppression_v1', []));
+    remote.forEach(r => list.add(r.contact));
+    orWrite('rdp_suppression_v1', [...list]);
+  } catch (error) {
+    orProviders = {error: error.message};
+  }
+}
+
+function orCanSend(channel) {
+  return Boolean(cloudSession && orProviders && orProviders[channel] === true);
+}
+
+async function orSendNow(i, quiet) {
+  const q = orQueue[i];
+  const b = ddBrand();
+  try {
+    await orCloud({channel: q.c.channel, to: q.contact, name: q.r.name, subject: q.subject, body: q.body, campaignKey: q.key, fromName: b.company || b.name, fromAddress: b.address});
+    orLog('Sent', q.contact, q.key);
+    return true;
+  } catch (error) {
+    if (/opted out|STOP/i.test(error.message)) orSuppress(q.contact, error.message);
+    else if (/already sent/i.test(error.message)) orLog('Sent', q.contact, q.key);
+    else orLog('Send failed', q.contact, q.c.name + ': ' + error.message);
+    if (!quiet) alert(error.message);
+    return false;
+  } finally {
+    if (!quiet) orRender();
+  }
+}
+
+async function orSendAll() {
+  const sendable = orQueue.map((q, i) => i).filter(i => orCanSend(orQueue[i].c.channel));
+  if (!sendable.length) { alert('Nothing due can be sent automatically. Connect a sending service or sign in to cloud.'); return; }
+  if (!confirm('Send ' + sendable.length + ' due messages now?')) return;
+  const status = document.getElementById('orQueueInfo');
+  let sent = 0;
+  for (const [n, i] of sendable.entries()) {
+    status.textContent = 'Sending ' + (n + 1) + ' of ' + sendable.length + '…';
+    if (await orSendNow(i, true)) sent++;
+    await new Promise(r => setTimeout(r, 1100));
+  }
+  orRender();
+  alert(sent + ' of ' + sendable.length + ' messages sent. See the activity log for any failures.');
 }
 
 function orLog(action, contact, detail) {
@@ -223,9 +280,13 @@ function orRender() {
     (h < orQuietStart || h >= orQuietEnd ? ' · Quiet hours now (email and text sending paused until 9 AM Eastern)' : '');
   document.getElementById('orQueue').innerHTML = due.map((q, i) => `<article class="lead"><div class="small">${escapeHtml(q.c.name)} · step ${q.step + 1} · ${q.c.channel.toUpperCase()}</div><strong>${escapeHtml(q.r.name || 'Unknown')}</strong> <span class="small">${escapeHtml(q.contact)}</span>
     <textarea rows="5" readonly>${escapeHtml((q.subject ? 'Subject: ' + q.subject + '\n\n' : '') + q.body)}</textarea>
-    <div class="flex">${q.c.channel !== 'mail' ? `<button type="button" onclick="orOpen(${i})">Open ${q.c.channel === 'email' ? 'email' : 'text'}</button>` : ''}<button type="button" onclick="orMarkSent(${i})">Mark sent</button><button type="button" onclick="orOptOut(${i})">Opted out</button></div></article>`).join('');
+    <div class="flex">${orCanSend(q.c.channel) ? `<button type="button" class="btn green" onclick="orSendNow(${i})">Send now</button>` : ''}${q.c.channel !== 'mail' ? `<button type="button" onclick="orOpen(${i})">Open ${q.c.channel === 'email' ? 'email' : 'text'}</button>` : ''}<button type="button" onclick="orMarkSent(${i})">Mark sent</button><button type="button" onclick="orOptOut(${i})">Opted out</button></div></article>`).join('');
   const log = orRead(orLogKey, []);
   document.getElementById('orLog').innerHTML = log.slice(0, 30).map(e => `<div class="log">${escapeHtml(new Date(e.at).toLocaleString('en-US', {timeZone: 'America/New_York'}))} — ${escapeHtml(e.action)} ${escapeHtml(e.contact)} <span class="small">${escapeHtml(e.detail.split('|')[0])}</span></div>`).join('') || '<p class="small">No activity yet.</p>';
+  const p = orProviders;
+  document.getElementById('orProviderInfo').textContent = !cloudSession ? 'Sending services: sign in to cloud (Settings) to send automatically. Until then, messages open in your email or text app.' :
+    !p ? 'Checking sending services…' : p.error ? 'Sending services unavailable: ' + p.error :
+    'Sending services — Email: ' + (p.email ? 'connected' : 'not connected') + ' · Text: ' + (p.sms ? 'connected' : 'not connected') + ' · Mail: ' + (p.mail ? 'connected' + (p.mailMode === 'test' ? ' (test mode, nothing is printed)' : '') : 'not connected');
   document.getElementById('orSuppressCount').textContent = orRead('rdp_suppression_v1', []).length + ' contacts on the do-not-contact list · ' + Object.keys(orRead(orConsentKey, {})).length + ' text consents recorded';
 }
 
@@ -233,4 +294,5 @@ function outreachShown() {
   const start = document.querySelector('#orForm [name=start]');
   if (!start.value) start.value = todayEastern();
   orRender();
+  orSyncCloud().then(orRender);
 }
