@@ -82,9 +82,48 @@ jobs:
               expect(q.filter(has_text='SMS')).to_have_count(0)
               page.reload(); page.get_by_role('button', name='Outreach', exact=True).click()
               expect(q).to_have_count(8)
+              # Provider sending through mocked Supabase function
+              import json
+              sent_bodies = []
+              def fn(route):
+                  body = json.loads(route.request.post_data or '{}')
+                  if body.get('status'):
+                      return route.fulfill(json={'email': True, 'sms': False, 'mail': True, 'mailMode': 'test'})
+                  sent_bodies.append(body)
+                  if body['to'] == 'test3@example.com':
+                      return route.fulfill(status=409, json={'error': 'This contact opted out.', 'optedOut': True})
+                  route.fulfill(json={'ok': True, 'providerId': 'x'})
+              page.route('**/functions/v1/outreach-send', fn)
+              page.route('**/rest/v1/outreach_suppression**', lambda r: r.fulfill(json=[{'contact': 'remote@example.com'}] if r.request.method == 'GET' else []))
+              page.evaluate("cloudSession = {access_token: 't', refresh_token: 'r', user: {id: 'u'}, expires_at: Date.now() / 1000 + 3600}")
+              page.get_by_role('button', name='Dashboard', exact=True).click()
+              page.get_by_role('button', name='Outreach', exact=True).click()
+              expect(page.locator('#orProviderInfo')).to_contain_text('Email: connected · Text: not connected · Mail: connected (test mode')
+              expect(q.first.get_by_role('button', name='Send now')).to_be_visible()
+              before = q.count()
+              page.get_by_role('button', name='Send all due now').click()
+              expect(q).to_have_count(0, timeout=30000)
+              print('sent', len(sent_bodies), 'of', before)
+              assert len(sent_bodies) == before and all('unsubscribe' in b['body'] and b['campaignKey'] for b in sent_bodies)
+              expect(page.locator('#orLog')).to_contain_text('Opt-out recorded')
+              assert 'remote@example.com' in page.evaluate("localStorage.getItem('rdp_suppression_v1')")
+              page.unroute('**/functions/v1/outreach-send'); page.unroute('**/rest/v1/outreach_suppression**')
+              page.evaluate("cloudSession = null")
               page.screenshot(path='/tmp/or_view.png')
+              errors = [e for e in errors if 'status of 409' not in e]
               print('errors', errors); assert not errors
               b.close()
               print('Outreach checks passed')
 
           PY
+  edge-function:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: |
+          cd supabase/functions/outreach-send
+          deno check index.ts
+          deno test --allow-env index_test.ts
