@@ -1,0 +1,53 @@
+name: GA and SC parcel search
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  ga-sc-chromium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8753 &
+          python - <<'PY'
+          import json
+          from playwright.sync_api import sync_playwright, expect
+          feature={'attributes':{'ParcelID':'14 0001 LL0011','Address':'12 OAK ST','Owner':'ESTATE OF JANE DOE','OwnerAddr1':'9 PINE RD','OwnerAddr2':'MIAMI FL 33101','ClassCode':'R3'},
+                   'geometry':{'rings':[[[-84.39,33.75],[-84.38,33.75],[-84.38,33.76],[-84.39,33.75]]]}}
+          with sync_playwright() as p:
+           b=p.chromium.launch(args=['--no-sandbox'])
+           page=b.new_page()
+           errors=[]; seen=[]
+           page.on('pageerror',lambda e:errors.append(str(e)))
+           def fulton(route):
+            seen.append(route.request.url)
+            route.fulfill(status=200,headers={'Access-Control-Allow-Origin':'*'},content_type='application/json',body=json.dumps({'features':[feature]}))
+           page.route('https://gismaps.fultoncountyga.gov/**',fulton)
+           page.route('https://unpkg.com/**',lambda r:r.abort())
+           page.goto('http://localhost:8753')
+           page.evaluate("go(document.getElementById('psForm').closest('[id^=view-]').id.slice(5))")
+           page.select_option('#psForm select[name=state]','GA')
+           expect(page.locator('#psForm select[name=county] option')).to_have_count(6)
+           page.select_option('#psForm select[name=county]','Fulton')
+           page.fill('#psForm [name=city]','ATLANTA')
+           page.click('#psForm button[type=submit]')
+           expect(page.locator('#psStatus')).to_contain_text('City search is not available for Fulton County')
+           page.fill('#psForm [name=city]','')
+           page.fill('#psForm [name=owner]','ESTATE')
+           page.click('#psForm button[type=submit]')
+           expect(page.locator('#psStatus')).to_contain_text('Found 1 properties')
+           r=page.evaluate("({...psResults[0], flags: psFlags(psResults[0]).map(f=>f[0])})")
+           assert r['address']=='12 OAK ST' and r['mailState']=='FL', r
+           assert {'Absentee owner','Out-of-state owner','Estate / trust / heirs'} <= set(r['flags']), r
+           assert "UPPER(Owner) LIKE 'ESTATE%'" in __import__('urllib.parse').parse.unquote_plus(seen[-1]), seen
+           page.select_option('#psForm select[name=state]','SC')
+           expect(page.locator('#psForm select[name=county] option')).to_have_count(3)
+           assert not errors,errors
+           print('GA/SC parcel search checks passed')
+          PY
