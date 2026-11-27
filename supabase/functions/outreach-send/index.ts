@@ -1,4 +1,4 @@
-// Sends one approved outreach message through SendGrid, Twilio or Lob. Provider keys live only in Supabase secrets.
+// Sends one approved outreach message through Brevo or SendGrid, Twilio or Lob. Provider keys live only in Supabase secrets.
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
 
 const env = (k: string) => Deno.env.get(k) ?? '';
@@ -55,6 +55,20 @@ export function validate(p: Payload, now = new Date()): string | null {
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 async function sendEmail(p: Payload) {
+  if (env('BREVO_API_KEY')) {
+    const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': env('BREVO_API_KEY'), 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        sender: { email: env('BREVO_FROM_EMAIL'), name: p.fromName || undefined },
+        to: [{ email: p.to, name: p.name || undefined }],
+        subject: p.subject,
+        textContent: p.body,
+      }),
+    });
+    if (!r.ok) throw new Error('Brevo rejected the email (' + r.status + ').');
+    return ((await r.json()) as { messageId?: string }).messageId ?? '';
+  }
   const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + env('SENDGRID_API_KEY'), 'Content-Type': 'application/json' },
@@ -104,7 +118,7 @@ async function sendMail(p: Payload) {
 }
 
 const configured = {
-  email: () => Boolean(env('SENDGRID_API_KEY') && env('SENDGRID_FROM_EMAIL')),
+  email: () => Boolean((env('BREVO_API_KEY') && env('BREVO_FROM_EMAIL')) || (env('SENDGRID_API_KEY') && env('SENDGRID_FROM_EMAIL'))),
   sms: () => Boolean(env('TWILIO_ACCOUNT_SID') && env('TWILIO_AUTH_TOKEN') && env('TWILIO_MESSAGING_SERVICE_SID')),
   mail: () => Boolean(env('LOB_API_KEY')),
 };
