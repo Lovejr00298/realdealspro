@@ -7,6 +7,7 @@ on:
       - manifest.webmanifest
       - sw.js
       - property-search.js
+      - deal-desk.js
       - 'icons/**'
       - 'discovery/**'
       - .github/workflows/county-pages.yml
@@ -45,7 +46,7 @@ jobs:
       - name: Build site and county queue
         run: |
           mkdir site
-          cp -r index.html CNAME manifest.webmanifest sw.js property-search.js icons site/
+          cp -r index.html CNAME manifest.webmanifest sw.js property-search.js deal-desk.js icons site/
           python discovery/publish.py > site/county-discovery.json
       - uses: actions/upload-pages-artifact@v3
         with:

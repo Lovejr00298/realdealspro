@@ -1,0 +1,93 @@
+name: Deal desk browser checks
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8752 &
+          sleep 1
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright, expect
+          with sync_playwright() as p:
+              b = p.chromium.launch(args=['--no-sandbox'])
+              ctx = b.new_context(viewport={'width': 390, 'height': 800})
+              page = ctx.new_page()
+              errors = []
+              page.on('pageerror', lambda e: errors.append(str(e)))
+              page.on('console', lambda m: m.type == 'error' and errors.append(m.text))
+              page.on('dialog', lambda d: d.accept())
+              page.goto('http://localhost:8752')
+              # Deal review
+              page.get_by_role('button', name='Deal Review', exact=True).click()
+              items = page.locator('#ddReviewList article')
+              expect(items.first).to_be_visible()
+              n = items.count(); print('deals', n, page.locator('#ddCounts').text_content())
+              scores = [int(t.split('Deal score ')[1].split('/')[0]) for t in items.all_text_contents()]
+              assert scores == sorted(scores, reverse=True), scores
+              first = items.first
+              print(first.text_content()[:200])
+              # reject without note blocked
+              first.get_by_role('button', name='Reject').click()
+              expect(first).to_contain_text('New')
+              # approve property deal, share
+              page.select_option('#ddKindFilter', 'Property')
+              prop = items.first
+              prop.get_by_role('button', name='Approve').click()
+              expect(items.first).to_contain_text('Approved')
+              items.first.get_by_role('button', name='Share with buyers').click()
+              expect(page.locator('#ddShare0')).to_contain_text('matching buyer')
+              print('share:', page.locator('#ddShare0').text_content()[:250])
+              page.select_option('#ddKindFilter', 'Surplus')
+              print('surplus first:', items.first.text_content()[:220])
+              page.select_option('#ddKindFilter', '')
+              # Branding
+              page.get_by_role('button', name='Settings', exact=True).click()
+              f = page.locator('#ddBrandForm')
+              f.locator('[name=name]').fill('Acme Surplus Co')
+              f.locator('[name=company]').fill('Acme Surplus LLC')
+              f.locator('[name=agent]').fill('Jane Doe')
+              f.locator('[name=address]').fill('100 Main St, Tampa, FL 33602')
+              f.locator('[name=color]').fill('#7c3aed')
+              f.get_by_role('button', name='Save branding').click()
+              expect(page.locator('#ddBrandStatus')).to_have_text('Branding saved.')
+              expect(page.locator('header h1')).to_have_text('Acme Surplus Co')
+              print('title', page.title(), page.eval_on_selector('header', 'e=>getComputedStyle(e).backgroundColor'))
+              page.reload()
+              expect(page.locator('header h1')).to_have_text('Acme Surplus Co')
+              # Documents
+              page.get_by_role('button', name='Contracts 📄', exact=True).click()
+              expect(page.locator('#ddRules')).to_contain_text('45.033')
+              vals = dict(client='John Owner', caseNo='2025-CA-1', county='Hillsborough', property='1 Test St', saleDate='2026-10-01', salePrice='200000', surplus='40000', assessed='180000', debt='150000', feePct='20')
+              for k, v in vals.items(): page.locator(f'#ddDocFields [name={k}]').fill(v)
+              page.get_by_role('button', name='Generate document').click()
+              expect(page.locator('#ddDocStatus')).to_contain_text('12%')
+              page.locator('#ddDocFields [name=feePct]').fill('10')
+              with ctx.expect_page() as pop:
+                  page.get_by_role('button', name='Generate document').click()
+              doc = pop.value; doc.wait_for_load_state()
+              body = doc.locator('body').text_content()
+              for s in ['DRAFT TEMPLATE', 'do not need an attorney', 'Acme Surplus LLC', '$4,000.00', '12% of the surplus', '60 days after']:
+                  assert s in body, s
+              doc.screenshot(path='/tmp/dd_doc.png', full_page=False); doc.close()
+              page.select_option('#ddDocState', 'GA'); expect(page.locator('#ddRules')).to_contain_text('48-4-5')
+              page.select_option('#ddDocType', 'purchase')
+              expect(page.locator('#ddDocFields [name=inspectionDays]')).to_be_visible()
+              page.get_by_role('button', name='Settings', exact=True).click()
+              f.get_by_role('button', name='Restore default').click()
+              expect(page.locator('header h1')).to_contain_text('RealDealsPro')
+              page.get_by_role('button', name='Deal Review', exact=True).click()
+              page.screenshot(path='/tmp/dd_review.png')
+              print('errors', errors); assert not errors
+              b.close()
+
+          PY
