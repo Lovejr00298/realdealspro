@@ -46,7 +46,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Build site and county queue
         run: |
-          (cd discovery && python -m unittest test_georgia)
+          (cd discovery && python -m unittest test_georgia test_counties)
           mkdir site
           cp -r index.html CNAME manifest.webmanifest sw.js property-search.js deal-desk.js outreach.js icons site/
           python discovery/publish.py > site/county-discovery.json

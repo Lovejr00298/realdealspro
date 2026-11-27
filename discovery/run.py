@@ -7,7 +7,8 @@ import sys
 from hillsborough import fetch_candidates
 from pasco import fetch_latest
 from marion import fetch_marion
-from georgia import checked, fetch_cobb, fetch_dekalb, fetch_gwinnett
+from georgia import checked, fetch_chatham, fetch_clayton, fetch_cobb, fetch_dekalb, fetch_gwinnett
+from volusia import fetch_volusia
 
 
 def run():
@@ -16,6 +17,9 @@ def run():
         "DeKalb, GA": lambda: checked(fetch_dekalb(), "DeKalb"),
         "Gwinnett, GA": lambda: checked(fetch_gwinnett(), "Gwinnett"),
         "Cobb, GA": lambda: checked(fetch_cobb(), "Cobb"),
+        "Clayton, GA": lambda: checked(fetch_clayton(), "Clayton"),
+        "Chatham, GA": lambda: checked(fetch_chatham(), "Chatham"),
+        "Volusia": lambda: checked(fetch_volusia(), "Volusia"),
     }
     results = {}
     with ThreadPoolExecutor(max_workers=len(sources)) as pool:
