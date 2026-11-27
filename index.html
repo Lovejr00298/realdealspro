@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RealDealsPro™ - Florida Off Market Deal System</title><meta name="theme-color" content="#0b1e3a">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RealDealsPro">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;background:#f3f5f8;color:#111}
 header{background:#0b1e3a;color:#fff;padding:16px 14px 12px;position:sticky;top:0;z-index:5}
@@ -1237,5 +1238,6 @@ async function cloudConfirmEmail(){return cloudTask(async()=>{
  document.getElementById('cloudEmail').value=email;cloudMsg('Email confirmation accepted. Sign in above with your RealDealsPro™ password. Local records are unchanged.');
 })}
 
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
 

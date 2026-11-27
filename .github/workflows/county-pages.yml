@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - index.html
+      - manifest.webmanifest
+      - sw.js
+      - 'icons/**'
       - 'discovery/**'
       - .github/workflows/county-pages.yml
   workflow_dispatch:
@@ -41,7 +44,7 @@ jobs:
       - name: Build site and county queue
         run: |
           mkdir site
-          cp index.html CNAME site/
+          cp -r index.html CNAME manifest.webmanifest sw.js icons site/
           python discovery/publish.py > site/county-discovery.json
       - uses: actions/upload-pages-artifact@v3
         with:
