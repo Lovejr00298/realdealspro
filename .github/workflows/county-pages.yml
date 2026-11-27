@@ -42,14 +42,15 @@ jobs:
       - name: Install PDF text extractor
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Install workbook reader
-        run: python -m pip install openpyxl==3.1.5 pypdf==5.1.0
+        run: python -m pip install openpyxl==3.1.5 pypdf==5.1.0 cryptography==44.0.0
       - uses: actions/configure-pages@v5
       - name: Build site and county queue
         run: |
-          (cd discovery && python -m unittest test_georgia test_counties)
+          (cd discovery && python -m unittest test_georgia test_counties test_clerk_lists)
           mkdir site
           cp -r index.html CNAME manifest.webmanifest sw.js property-search.js deal-desk.js outreach.js icons site/
           python discovery/publish.py > site/county-discovery.json
+          python discovery/publish_private.py > site/county-private.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
