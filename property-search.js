@@ -9,6 +9,28 @@ const PS_FL_PAGE = 2000;
 const PS_FL_MAX_PAGES = 5;
 const PS_MAX_RESULTS = 200;
 const PS_FL_USE = {'000':'Vacant residential','001':'Single family','002':'Mobile home','003':'Multi-family 10+','004':'Condominium','008':'Multi-family <10','010':'Vacant commercial','040':'Vacant industrial','070':'Vacant institutional'};
+// GA and SC have no public statewide parcel layer with owners, so these are county assessor services.
+const PS_COUNTY_SOURCES = {
+  GA: {
+    Chatham: {url: 'https://pub.sagis.org/arcgis/rest/services/OpenData/Parcels/FeatureServer/27/query', id: 'PIN', address: 'PropAddress_Full', city: 'PropAddress_City', zip: 'PropAddress_Zip', owner: 'Owner',
+      mail: ['Mailing_Address', 'Mailing_City', 'Mailing_State', 'Mailing_Zip'], mailStreet: 'Mailing_Address', mailState: 'Mailing_State', value: 'FairMarketValue', building: 'FMV_Building', year: 'YearBuilt', use: 'Property_Use', salePrice: 'Sale_Price', saleYear: 'Sale_YY'},
+    Cobb: {url: 'https://gis.cobbcounty.gov/gisserver/rest/services/tax/taxassessorsdaily/MapServer/0/query', page: 1000, id: 'PIN', address: 'SITUS_ADDR', owner: 'OWNER_NAM1',
+      mail: ['OWNER_ADDR', 'OWNER_CITY', 'OWNER_STAT', 'OWNER_ZIP'], mailStreet: 'OWNER_ADDR', mailState: 'OWNER_STAT', value: 'FMV_TOTAL', building: 'FMV_BLDG', use: 'CLASS'},
+    DeKalb: {url: 'https://dcgis.dekalbcountyga.gov/mapping/rest/services/Tax_Parcels_Assessment_View/FeatureServer/2/query', id: 'PARCELID', address: 'SITEADDRESS', city: 'CITY', zip: 'ZIP', owner: 'OWNERNME1',
+      mail: ['PSTLADDRESS', 'PSTLCITY', 'PSTLSTATE', 'PSTLZIP5'], mailStreet: 'PSTLADDRESS', mailState: 'PSTLSTATE', value: 'TOTAPR1', building: 'BUILD_VALUE', year: 'RESYRBLT', sqft: 'RESFLRAREA', use: 'CLASSDSCRP'},
+    Fulton: {url: 'https://gismaps.fultoncountyga.gov/arcgispub/rest/services/OpenData/Tax_Parcels/MapServer/0/query', id: 'ParcelID', address: 'Address', owner: 'Owner',
+      mail: ['OwnerAddr1', 'OwnerAddr2'], mailStreet: 'OwnerAddr1', mailStateFrom: 'OwnerAddr2', use: 'ClassCode'},
+    Gwinnett: {url: 'https://gis3.gwinnettcounty.com/mapvis/rest/services/GISDataBrowser/GC_Parcel/MapServer/6/query', id: 'PIN', address: 'LOCADDR', city: 'LOCCITY', zip: 'LOCZIP', owner: 'OWNER1',
+      mail: ['MAILADDR', 'MAILCITY', 'MAILSTAT', 'MAILZIP'], mailStreet: 'MAILADDR', mailState: 'MAILSTAT', value: 'TOTVAL1', building: 'DWLGVAL1', use: 'PCDESC'}
+  },
+  SC: {
+    Horry: {url: 'https://www.horrycountysc.gov/parcelapp/rest/services/HorryCountyGISApp/MapServer/24/query', id: 'TMS', owner: 'OwnerName',
+      mail: ['OwnerStreet', 'OwnerCity', 'OwnerState', 'OwnerZip'], mailState: 'OwnerState', value: 'MarketProp', building: 'MarketImprv', use: 'LandUseCode', saleDate: 'SaleDate'},
+    York: {url: 'https://services1.arcgis.com/2AGLxyiJoNiVHKwq/arcgis/rest/services/Parcels/FeatureServer/0/query', id: 'TAXMAPID', address: 'PropertyAddress', owner: 'Owner1',
+      mail: ['MailAddr1', 'MailCity', 'MailState', 'MailZip'], mailStreet: 'MailAddr1', mailState: 'MailState', value: 'AprTotVal', building: 'AprBldgVal', year: 'YearBuilt', sqft: 'FinishedSQFT',
+      use: 'LandUseDesc', salePrice: 'SalePrice', saleDate: 'DateSold', homestead: 'HOMESTEAD'}
+  }
+};
 const PS_ESTATE = ['ESTATE','HEIRS','TRUST','DECEASED'];
 const PS_CORP = [' LLC',' INC',' CORP',' LTD',' LP',' COMPANY'];
 const psSavedKey = 'rdp_saved_searches_v1';
@@ -47,6 +69,13 @@ function psValidate(c) {
   for (const value of [c.city, c.street, c.owner]) {
     if (value && !/^[A-Z0-9 .,'&-]{2,60}$/.test(value)) throw Error('Use letters and numbers only (at least two characters).');
   }
+  const source = PS_COUNTY_SOURCES[c.state]?.[c.county];
+  if (source) {
+    for (const [value, field, label] of [[c.city, source.city, 'City'], [c.zip, source.zip, 'ZIP code'], [c.street, source.address, 'Street']]) {
+      if (value && !field) throw Error(label + ' search is not available for ' + c.county + ' County. Search by ' + (source.address ? 'street or ' : '') + 'owner name.');
+    }
+    if (c.type && c.type !== 'vacant') throw Error('Only the vacant land type filter is available for ' + c.county + ' County.');
+  }
   if (c.minValue != null && c.maxValue != null && c.minValue > c.maxValue) throw Error('Minimum value is above the maximum.');
 }
 
@@ -80,7 +109,7 @@ function psMatchFL(c, p) {
   const owner = p.owner.toUpperCase();
   return (!c.zip || p.zip === c.zip)
     && (!c.street || p.address.toUpperCase().includes(c.street))
-    && (!c.type || !PS_FL_TYPES[c.type] || PS_FL_TYPES[c.type](p.useCode || ''))
+    && (!c.type || (p.state === 'FL' ? !PS_FL_TYPES[c.type] || PS_FL_TYPES[c.type](p.useCode || '') : c.type === 'vacant' && p.vacant))
     && (!c.absentee || p.absentee) && (!c.outOfState || p.outOfState) && (!c.noHomestead || p.noHomestead)
     && (!c.longTerm || p.longTerm)
     && (!c.estate || PS_ESTATE.some(word => owner.includes(word)))
@@ -143,6 +172,65 @@ async function psSearchFL(c, status) {
     const data = await psFetch(psUrl('FL', {where, outFields: PS_FL_FIELDS,
       orderByFields: 'OBJECTID', returnGeometry: 'false', returnCentroid: 'true', resultOffset: String(page * PS_FL_PAGE), resultRecordCount: String(PS_FL_PAGE)}));
     matches.push(...data.features.map(psNormalizeFL).filter(p => psMatchFL(c, p)));
+    more = Boolean(data.exceededTransferLimit);
+  }
+  return {features: matches.slice(0, PS_MAX_RESULTS), truncated: more || matches.length > PS_MAX_RESULTS};
+}
+
+function psCountyWhere(s, c) {
+  const w = [s.owner + ' IS NOT NULL'];
+  if (c.city) w.push('UPPER(' + s.city + ") = '" + psQuote(c.city) + "'");
+  if (c.zip) w.push(s.zip + " LIKE '" + c.zip + "%'");
+  if (c.street) w.push('UPPER(' + s.address + ") LIKE '%" + psQuote(c.street) + "%'");
+  if (c.owner) w.push('UPPER(' + s.owner + ") LIKE '" + psQuote(c.owner) + "%'");
+  return w.join(' AND ');
+}
+
+function psNormalizeCounty(state, county, s, f) {
+  const a = f.attributes || {};
+  const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
+  const get = key => key ? a[key] : null;
+  const num = key => {
+    const value = get(key);
+    return value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+  };
+  const words = text => new Set(text.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').split(' ').filter(Boolean));
+  const parcel = clean(get(s.id));
+  const address = clean(get(s.address));
+  const mailStreet = clean(get(s.mailStreet));
+  const mailState = s.mailState ? clean(get(s.mailState)) : ((clean(get(s.mailStateFrom)).match(/\s([A-Z]{2})\s+\d{5}/) || [])[1] || '');
+  const sold = s.saleDate && get(s.saleDate) ? new Date(get(s.saleDate)) : null;
+  const saleYear = sold ? sold.getUTCFullYear() : num(s.saleYear);
+  const ring = f.geometry?.rings?.[0] || [];
+  const site = words(address);
+  const p = {
+    id: state + '-' + county + '-' + parcel, state, county, parcelId: parcel,
+    address: address || 'Parcel ' + parcel, city: clean(get(s.city)), zip: clean(get(s.zip)).slice(0, 5),
+    owner: clean(get(s.owner)) || 'Unknown', mail: s.mail.map(key => clean(a[key])).filter(Boolean).join(', '), mailState,
+    value: num(s.value) || null, sqft: num(s.sqft) || null, yearBuilt: num(s.year) || null, use: clean(get(s.use)) || 'Use unknown',
+    lastSalePrice: num(s.salePrice) || null, lastSale: sold ? sold.toISOString().slice(0, 10) : (saleYear ? String(saleYear) : ''),
+    lat: ring.length ? ring.reduce((sum, point) => sum + point[1], 0) / ring.length : undefined,
+    lng: ring.length ? ring.reduce((sum, point) => sum + point[0], 0) / ring.length : undefined,
+    absentee: Boolean(address && mailStreet && [...words(mailStreet)].some(word => !site.has(word))),
+    outOfState: Boolean(mailState && mailState !== state),
+    noHomestead: s.homestead ? get(s.homestead) !== 'Y' : false,
+    vacant: num(s.building) === 0, longTerm: Boolean(saleYear && saleYear <= new Date().getFullYear() - 15)
+  };
+  p.source = s.url + '?' + new URLSearchParams({f: 'json', where: s.id + " = '" + psQuote(get(s.id)) + "'", outFields: '*', returnGeometry: 'false'});
+  return p;
+}
+
+async function psSearchCounty(c, status) {
+  const s = PS_COUNTY_SOURCES[c.state][c.county];
+  const fields = [s.id, s.address, s.city, s.zip, s.owner, ...s.mail, s.mailStreet, s.mailState, s.mailStateFrom, s.value, s.building, s.year, s.sqft, s.use, s.salePrice, s.saleDate, s.saleYear, s.homestead];
+  const size = s.page || 2000;
+  const matches = [];
+  let more = true;
+  for (let page = 0; page < 3 && more && matches.length < PS_MAX_RESULTS; page++) {
+    if (page) status.textContent = 'Scanning more ' + c.county + ' County records (' + (page * size).toLocaleString() + ' checked)…';
+    const data = await psFetch(s.url + '?' + new URLSearchParams({f: 'json', where: psCountyWhere(s, c), outFields: [...new Set(fields.filter(Boolean))].join(','),
+      orderByFields: 'OBJECTID', returnGeometry: 'true', outSR: '4326', maxAllowableOffset: '0.0001', resultOffset: String(page * size), resultRecordCount: String(size)}));
+    matches.push(...data.features.map(f => psNormalizeCounty(c.state, c.county, s, f)).filter(p => psMatchFL(c, p)));
     more = Boolean(data.exceededTransferLimit);
   }
   return {features: matches.slice(0, PS_MAX_RESULTS), truncated: more || matches.length > PS_MAX_RESULTS};
@@ -238,6 +326,8 @@ async function psSearch(event) {
     let found;
     if (c.state === 'FL') {
       found = await psSearchFL(c, status);
+    } else if (PS_COUNTY_SOURCES[c.state]) {
+      found = await psSearchCounty(c, status);
     } else {
       const data = await psFetch(psUrl('NC', {where: psWhere(c), outFields: 'parno,cntyname,siteadd,scity,szip,ownname,mailadd,mcity,mstate,mzip,parval,improvval,structyear,parusedesc,saledate', returnGeometry: 'true', resultRecordCount: String(PS_MAX_RESULTS)}));
       found = {features: data.features.map(psNormalizeNC), truncated: Boolean(data.exceededTransferLimit)};
@@ -474,7 +564,7 @@ function psRenderSaved() {
 function psCounties() {
   const form = document.getElementById('psForm');
   const state = form.state.value;
-  const names = state === 'FL' ? PS_FL_COUNTIES : PS_NC_COUNTIES;
+  const names = PS_COUNTY_SOURCES[state] ? Object.keys(PS_COUNTY_SOURCES[state]) : state === 'FL' ? PS_FL_COUNTIES : PS_NC_COUNTIES;
   form.county.innerHTML = '<option value="">Select county</option>' + names.map(n => `<option>${n}</option>`).join('');
   form.noHomestead.closest('label').classList.toggle('hidden', state !== 'FL');
 }
