@@ -66,7 +66,10 @@ async function sendEmail(p: Payload) {
         textContent: p.body,
       }),
     });
-    if (!r.ok) throw new Error('Brevo rejected the email (' + r.status + ').');
+    if (!r.ok) {
+      const detail = String(((await r.json().catch(() => ({}))) as { message?: string }).message ?? '').slice(0, 200);
+      throw new Error('Brevo rejected the email (' + r.status + ')' + (detail ? ': ' + detail : '.'));
+    }
     return ((await r.json()) as { messageId?: string }).messageId ?? '';
   }
   const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
