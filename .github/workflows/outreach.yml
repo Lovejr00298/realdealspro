@@ -1,0 +1,90 @@
+name: Outreach browser checks
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  outreach-chromium:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8752 &
+          sleep 1
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright, expect
+          with sync_playwright() as p:
+              b = p.chromium.launch(args=['--no-sandbox'])
+              page = b.new_page(viewport={'width': 390, 'height': 800})
+              errors = []
+              page.on('pageerror', lambda e: errors.append(str(e)))
+              page.on('console', lambda m: m.type == 'error' and errors.append(m.text))
+              page.on('dialog', lambda d: d.accept())
+              page.goto('http://localhost:8752')
+              page.get_by_role('button', name='Outreach', exact=True).click()
+              f = page.locator('#orForm')
+              f.locator('[name=name]').fill('Buyer blast')
+              f.locator('[name=audience]').select_option('buyers')
+              f.locator('[name=subject]').fill('New deal for {name}')
+              f.locator('[name=body1]').fill('Hi {name}, I have a deal matching {buybox}. - {agent}')
+              f.get_by_role('button', name='Save draft campaign').click()
+              expect(page.locator('#orStatus')).to_contain_text('Branding')
+              page.get_by_role('button', name='Settings', exact=True).click()
+              bf = page.locator('#ddBrandForm')
+              bf.locator('[name=company]').fill('Acme LLC'); bf.locator('[name=agent]').fill('Jane'); bf.locator('[name=address]').fill('1 Main St, Tampa, FL 33602')
+              bf.get_by_role('button', name='Save branding').click()
+              page.get_by_role('button', name='Outreach', exact=True).click()
+              f.locator('[name=body1]').fill('You are owed money guaranteed')
+              f.get_by_role('button', name='Save draft campaign').click()
+              expect(page.locator('#orStatus')).to_contain_text('guarantee')
+              f.locator('[name=body1]').fill('Hi {name}, I have a deal matching {buybox}. - {agent}')
+              f.locator('[name=delay2]').fill('3'); f.locator('[name=body2]').fill('Following up, {name}.')
+              f.get_by_role('button', name='Save draft campaign').click()
+              expect(page.locator('#orStatus')).to_contain_text('draft')
+              camp = page.locator('#orCampaigns article').first
+              expect(camp).to_contain_text('Draft'); expect(camp).to_contain_text('10 recipients')
+              camp.get_by_role('button', name='Approve and activate').click()
+              expect(camp).to_contain_text('Draft')  # checks not ticked
+              for cb in camp.locator('input[type=checkbox]').all(): cb.check()
+              camp.get_by_role('button', name='Approve and activate').click()
+              expect(camp).to_contain_text('Active')
+              q = page.locator('#orQueue article')
+              expect(q).to_have_count(10)
+              t = q.first.locator('textarea').input_value(); print(t)
+              assert 'Subject: New deal for Test Buyer 1' in t and 'Acme LLC · 1 Main St' in t and 'unsubscribe' in t and 'Jane' in t
+              q.first.get_by_role('button', name='Mark sent').click()
+              expect(q).to_have_count(9)
+              q.first.get_by_role('button', name='Opted out').click()
+              expect(q).to_have_count(8)
+              print(page.locator('#orQueueInfo').text_content())
+              expect(page.locator('#orQueueInfo')).to_contain_text('1 opted out')
+              expect(page.locator('#orLog')).to_contain_text('Opt-out recorded')
+              # SMS needs consent
+              f.locator('[name=name]').fill('Text buyers'); f.locator('[name=audience]').select_option('buyers'); f.locator('[name=channel]').select_option('sms')
+              f.locator('[name=body1]').fill('Hi {name}, new deal available.')
+              f.get_by_role('button', name='Save draft campaign').click()
+              c2 = page.locator('#orCampaigns article').nth(1)
+              for cb in c2.locator('input[type=checkbox]').all(): cb.check()
+              c2.get_by_role('button', name='Approve and activate').click()
+              expect(page.locator('#orQueueInfo')).to_contain_text('without text consent')
+              page.fill('[aria-label="Consent phone"]', '863-555-0103'); page.fill('[aria-label="Consent source"]', 'Signed web form 11/27/2026')
+              page.get_by_role('button', name='Record text consent').click()
+              expect(page.locator('#orConsentStatus')).to_have_text('Consent recorded.')
+              expect(q.filter(has_text='SMS')).to_have_count(1)
+              assert 'Reply STOP' in q.filter(has_text='SMS').locator('textarea').input_value()
+              # pause removes from queue
+              page.locator('#orCampaigns article').nth(1).get_by_role('button', name='Pause').click()
+              expect(q.filter(has_text='SMS')).to_have_count(0)
+              page.reload(); page.get_by_role('button', name='Outreach', exact=True).click()
+              expect(q).to_have_count(8)
+              page.screenshot(path='/tmp/or_view.png')
+              print('errors', errors); assert not errors
+              b.close()
+              print('Outreach checks passed')
+
+          PY
