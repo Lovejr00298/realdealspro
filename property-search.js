@@ -1,0 +1,489 @@
+'use strict';
+const PS_FL_URL = 'https://services9.arcgis.com/Gh9awoU677aKree0/arcgis/rest/services/Florida_Statewide_Cadastral/FeatureServer/0/query';
+const PS_NC_URL = 'https://services.nconemap.gov/secure/rest/services/NC1Map_Parcels/MapServer/0/query';
+const PS_FL_COUNTIES = ['Alachua','Baker','Bay','Bradford','Brevard','Broward','Calhoun','Charlotte','Citrus','Clay','Collier','Columbia','Miami-Dade','DeSoto','Dixie','Duval','Escambia','Flagler','Franklin','Gadsden','Gilchrist','Glades','Gulf','Hamilton','Hardee','Hendry','Hernando','Highlands','Hillsborough','Holmes','Indian River','Jackson','Jefferson','Lafayette','Lake','Lee','Leon','Levy','Liberty','Madison','Manatee','Marion','Martin','Monroe','Nassau','Okaloosa','Okeechobee','Orange','Osceola','Palm Beach','Pasco','Pinellas','Polk','Putnam','St. Johns','St. Lucie','Santa Rosa','Sarasota','Seminole','Sumter','Suwannee','Taylor','Union','Volusia','Wakulla','Walton','Washington'];
+const PS_NC_COUNTIES = ['Alamance','Alexander','Alleghany','Anson','Ashe','Avery','Beaufort','Bertie','Bladen','Brunswick','Buncombe','Burke','Cabarrus','Caldwell','Camden','Carteret','Caswell','Catawba','Chatham','Cherokee','Chowan','Clay','Cleveland','Columbus','Craven','Cumberland','Currituck','Dare','Davidson','Davie','Duplin','Durham','Edgecombe','Forsyth','Franklin','Gaston','Gates','Graham','Granville','Greene','Guilford','Halifax','Harnett','Haywood','Henderson','Hertford','Hoke','Hyde','Iredell','Jackson','Johnston','Jones','Lee','Lenoir','Lincoln','Macon','Madison','Martin','McDowell','Mecklenburg','Mitchell','Montgomery','Moore','Nash','New Hanover','Northampton','Onslow','Orange','Pamlico','Pasquotank','Pender','Perquimans','Person','Pitt','Polk','Randolph','Richmond','Robeson','Rockingham','Rowan','Rutherford','Sampson','Scotland','Stanly','Stokes','Surry','Swain','Transylvania','Tyrrell','Union','Vance','Wake','Warren','Washington','Watauga','Wayne','Wilkes','Wilson','Yadkin','Yancey'];
+const PS_FL_TYPES = {sfr: u => u === '001', condo: u => u === '004', mobile: u => u === '002', multi: u => u === '003' || u === '008',
+  vacant: u => ['000', '010', '040', '070'].includes(u), commercial: u => u >= '011' && u <= '039'};
+const PS_FL_PAGE = 2000;
+const PS_FL_MAX_PAGES = 5;
+const PS_MAX_RESULTS = 200;
+const PS_FL_USE = {'000':'Vacant residential','001':'Single family','002':'Mobile home','003':'Multi-family 10+','004':'Condominium','008':'Multi-family <10','010':'Vacant commercial','040':'Vacant industrial','070':'Vacant institutional'};
+const PS_ESTATE = ['ESTATE','HEIRS','TRUST','DECEASED'];
+const PS_CORP = [' LLC',' INC',' CORP',' LTD',' LP',' COMPANY'];
+const psSavedKey = 'rdp_saved_searches_v1';
+let psResults = [];
+let psMap = null;
+let psMarkers = null;
+let psLeafletLoading = null;
+
+const psQuote = value => String(value).replaceAll("'", "''");
+const psLikeAny = (field, words) => '(' + words.map(word => field + " LIKE '%" + word + "%'").join(' OR ') + ')';
+
+function psForm() {
+  const form = new FormData(document.getElementById('psForm'));
+  const text = name => String(form.get(name) || '').trim().toUpperCase();
+  const num = name => {
+    const raw = String(form.get(name) || '').trim();
+    if (!raw) return null;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) throw Error('Enter a valid non-negative number.');
+    return value;
+  };
+  return {
+    state: form.get('state'), county: form.get('county'), city: text('city'), zip: text('zip'),
+    street: text('street'), owner: text('owner'), type: form.get('type'),
+    absentee: form.has('absentee'), outOfState: form.has('outOfState'), noHomestead: form.has('noHomestead'),
+    estate: form.has('estate'), corporate: form.has('corporate'), longTerm: form.has('longTerm'),
+    minValue: num('minValue'), maxValue: num('maxValue'), maxYear: num('maxYear')
+  };
+}
+
+function psValidate(c) {
+  if (!c.county) throw Error('Select a county.');
+  if (!c.city && !c.zip && !c.street && !c.owner) throw Error('Enter a city, ZIP code, street, or owner name to narrow the search.');
+  if (c.zip && !/^\d{5}$/.test(c.zip)) throw Error('Enter a five-digit ZIP code.');
+  if (c.state === 'FL' && c.street && !c.city && !c.zip && !c.owner) throw Error('Add a city or ZIP code to search by street in Florida.');
+  for (const value of [c.city, c.street, c.owner]) {
+    if (value && !/^[A-Z0-9 .,'&-]{2,60}$/.test(value)) throw Error('Use letters and numbers only (at least two characters).');
+  }
+  if (c.minValue != null && c.maxValue != null && c.minValue > c.maxValue) throw Error('Minimum value is above the maximum.');
+}
+
+function psWhere(c) {
+  const w = [];
+  if (c.state === 'FL') {
+    w.push('CO_NO = ' + (PS_FL_COUNTIES.indexOf(c.county) + 11));
+    // The statewide service times out on most filters, so only fast fields go to the server; psMatchFL applies the rest.
+    if (c.city) w.push("PHY_CITY = '" + psQuote(c.city) + "'");
+    if (c.owner) w.push("OWN_NAME LIKE '" + psQuote(c.owner) + "%'");
+  } else {
+    w.push("cntyname = '" + psQuote(c.county) + "'");
+    if (c.city) w.push("UPPER(scity) = '" + psQuote(c.city) + "'");
+    if (c.zip) w.push("szip LIKE '" + c.zip + "%'");
+    if (c.street) w.push("UPPER(siteadd) LIKE '%" + psQuote(c.street) + "%'");
+    if (c.owner) w.push("UPPER(ownname) LIKE '" + psQuote(c.owner) + "%'");
+    if (c.type === 'vacant') w.push('improvval = 0');
+    if (c.absentee) w.push('mailadd <> siteadd');
+    if (c.outOfState) w.push("NOT (mstate = 'NC' OR mcity LIKE '% NC %' OR mcity LIKE '% NC')");
+    if (c.estate) w.push(psLikeAny('UPPER(ownname)', PS_ESTATE));
+    if (c.corporate) w.push(psLikeAny('UPPER(ownname)', PS_CORP));
+    if (c.longTerm) w.push("saledate <= date '" + (new Date().getFullYear() - 15) + "-01-01'");
+    if (c.minValue != null) w.push('parval >= ' + c.minValue);
+    if (c.maxValue != null) w.push('parval <= ' + c.maxValue);
+    if (c.maxYear != null) w.push('structyear > 0 AND structyear <= ' + c.maxYear);
+  }
+  return w.join(' AND ');
+}
+
+function psMatchFL(c, p) {
+  const owner = p.owner.toUpperCase();
+  return (!c.zip || p.zip === c.zip)
+    && (!c.street || p.address.toUpperCase().includes(c.street))
+    && (!c.type || !PS_FL_TYPES[c.type] || PS_FL_TYPES[c.type](p.useCode || ''))
+    && (!c.absentee || p.absentee) && (!c.outOfState || p.outOfState) && (!c.noHomestead || p.noHomestead)
+    && (!c.longTerm || p.longTerm)
+    && (!c.estate || PS_ESTATE.some(word => owner.includes(word)))
+    && (!c.corporate || PS_CORP.some(word => owner.includes(word)))
+    && (c.minValue == null || (p.value || 0) >= c.minValue)
+    && (c.maxValue == null || (p.value || 0) <= c.maxValue)
+    && (c.maxYear == null || (p.yearBuilt > 0 && p.yearBuilt <= c.maxYear));
+}
+
+const PS_FL_FIELDS = 'PARCEL_ID,CO_NO,PHY_ADDR1,PHY_CITY,PHY_ZIPCD,OWN_NAME,OWN_ADDR1,OWN_ADDR2,OWN_CITY,OWN_STATE,OWN_ZIPCD,JV,JV_HMSTD,TOT_LVG_AR,ACT_YR_BLT,DOR_UC,SALE_PRC1,SALE_YR1,SALE_MO1';
+const PS_TILE = 0.015;
+
+async function psZipExtent(zip) {
+  const url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?' +
+    new URLSearchParams({postal: zip, countryCode: 'USA', maxLocations: '1', outFields: 'Region', f: 'json'});
+  let hit;
+  try {
+    const response = await fetch(url, {signal: AbortSignal.timeout(15000)});
+    hit = (await response.json()).candidates?.[0];
+  } catch {}
+  if (!hit?.extent) throw Error('Could not look up that ZIP code. Search by city instead.');
+  if (hit.attributes?.Region && hit.attributes.Region !== 'Florida') throw Error('ZIP ' + zip + ' is not in Florida.');
+  return hit.extent;
+}
+
+// ZIP filters time out on the statewide service, so ZIP searches read small map tiles covering the ZIP and filter locally.
+async function psSearchFLZip(c, status) {
+  const e = await psZipExtent(c.zip);
+  const tiles = [];
+  for (let x = e.xmin; x < e.xmax; x += PS_TILE) for (let y = e.ymin; y < e.ymax; y += PS_TILE) tiles.push([x, y, Math.min(x + PS_TILE, e.xmax), Math.min(y + PS_TILE, e.ymax)]);
+  const coNo = PS_FL_COUNTIES.indexOf(c.county) + 11;
+  const matches = new Map();
+  let done = 0;
+  const readTile = async tile => {
+    for (let page = 0, more = true; page < 3 && more; page++) {
+      const data = await psFetch(psUrl('FL', {where: '1=1', geometry: tile.join(','), geometryType: 'esriGeometryEnvelope', inSR: '4326', spatialRel: 'esriSpatialRelIntersects',
+        outFields: PS_FL_FIELDS, orderByFields: 'OBJECTID', returnGeometry: 'false', returnCentroid: 'true', resultOffset: String(page * PS_FL_PAGE), resultRecordCount: String(PS_FL_PAGE)}));
+      for (const f of data.features) {
+        if (f.attributes.CO_NO !== coNo) continue;
+        const p = psNormalizeFL(f);
+        if ((!c.city || p.city.toUpperCase() === c.city) && (!c.owner || p.owner.toUpperCase().startsWith(c.owner)) && psMatchFL(c, p)) matches.set(p.id, p);
+      }
+      more = Boolean(data.exceededTransferLimit);
+    }
+    status.textContent = 'Scanning ZIP ' + c.zip + ' (' + ++done + ' of ' + tiles.length + ' areas)…';
+  };
+  const queue = [...tiles];
+  await Promise.all(Array.from({length: 4}, async () => { while (queue.length) await readTile(queue.shift()); }));
+  const features = [...matches.values()].map(p => ({...p, score: psScore(p)})).sort((a, b) => b.score - a.score);
+  return {features: features.slice(0, PS_MAX_RESULTS), truncated: features.length > PS_MAX_RESULTS};
+}
+
+async function psSearchFL(c, status) {
+  if (c.zip) return psSearchFLZip(c, status);
+  const where = psWhere(c);
+  const matches = [];
+  let more = true;
+  for (let page = 0; page < PS_FL_MAX_PAGES && more && matches.length < PS_MAX_RESULTS; page++) {
+    if (page) status.textContent = 'Scanning more ' + c.county + ' County records (' + (page * PS_FL_PAGE).toLocaleString() + ' checked)…';
+    const data = await psFetch(psUrl('FL', {where, outFields: PS_FL_FIELDS,
+      orderByFields: 'OBJECTID', returnGeometry: 'false', returnCentroid: 'true', resultOffset: String(page * PS_FL_PAGE), resultRecordCount: String(PS_FL_PAGE)}));
+    matches.push(...data.features.map(psNormalizeFL).filter(p => psMatchFL(c, p)));
+    more = Boolean(data.exceededTransferLimit);
+  }
+  return {features: matches.slice(0, PS_MAX_RESULTS), truncated: more || matches.length > PS_MAX_RESULTS};
+}
+
+function psUrl(state, params) {
+  const base = state === 'FL' ? PS_FL_URL : PS_NC_URL;
+  return base + '?' + new URLSearchParams({f: 'json', outSR: '4326', ...params});
+}
+
+function psFlags(p) {
+  const flags = [];
+  const owner = String(p.owner || '').toUpperCase();
+  if (p.absentee) flags.push(['Absentee owner', 20]);
+  if (p.outOfState) flags.push(['Out-of-state owner', 15]);
+  if (p.noHomestead) flags.push(['No homestead exemption', 10]);
+  if (PS_ESTATE.some(word => owner.includes(word))) flags.push(['Estate / trust / heirs', 25]);
+  if (p.vacant) flags.push(['Vacant land', 10]);
+  if (p.longTerm) flags.push(['Owned 15+ years', 15]);
+  if (PS_CORP.some(word => owner.includes(word))) flags.push(['Company owner', 0]);
+  return flags;
+}
+
+function psNormalizeFL(f) {
+  const a = f.attributes || {};
+  const point = f.centroid || {};
+  const mail = [a.OWN_ADDR1, a.OWN_ADDR2, a.OWN_CITY, a.OWN_STATE, a.OWN_ZIPCD].map(v => String(v ?? '').trim()).filter(Boolean).join(', ');
+  const p = {
+    id: 'FL-' + a.PARCEL_ID, state: 'FL', county: PS_FL_COUNTIES[a.CO_NO - 11] || '', parcelId: a.PARCEL_ID,
+    address: a.PHY_ADDR1 || 'Parcel ' + a.PARCEL_ID, city: a.PHY_CITY || '', zip: a.PHY_ZIPCD ? String(a.PHY_ZIPCD) : '',
+    owner: a.OWN_NAME || 'Unknown', mail, mailState: a.OWN_STATE || '',
+    value: a.JV || null, sqft: a.TOT_LVG_AR || null, yearBuilt: a.ACT_YR_BLT || null,
+    use: PS_FL_USE[a.DOR_UC] || ('Use code ' + (a.DOR_UC || 'unknown')), useCode: a.DOR_UC,
+    lastSalePrice: a.SALE_PRC1 || null, lastSale: a.SALE_YR1 ? a.SALE_YR1 + (a.SALE_MO1 ? '-' + String(a.SALE_MO1).padStart(2, '0') : '') : '',
+    lat: point.y, lng: point.x,
+    absentee: Boolean(a.OWN_ADDR1 && a.PHY_ADDR1 && a.OWN_ADDR1.trim() !== a.PHY_ADDR1.trim()),
+    outOfState: Boolean(a.OWN_STATE && a.OWN_STATE !== 'FL'),
+    noHomestead: !a.JV_HMSTD, vacant: ['000', '010', '040', '070'].includes(a.DOR_UC),
+    longTerm: Boolean(a.SALE_YR1 && a.SALE_YR1 <= new Date().getFullYear() - 15)
+  };
+  p.source = psUrl('FL', {where: "PARCEL_ID = '" + psQuote(a.PARCEL_ID) + "' AND CO_NO = " + a.CO_NO, outFields: '*', returnGeometry: 'false'});
+  return p;
+}
+
+function psNormalizeNC(f) {
+  const a = f.attributes || {};
+  const g = f.geometry || {};
+  const mailState = a.mstate || ((String(a.mcity || '').match(/\s([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?$/) || [])[1] || '');
+  const sold = a.saledate ? new Date(a.saledate) : null;
+  const p = {
+    id: 'NC-' + a.cntyname + '-' + a.parno, state: 'NC', county: a.cntyname || '', parcelId: a.parno,
+    address: a.siteadd || 'Parcel ' + a.parno, city: a.scity || '', zip: a.szip || '',
+    owner: a.ownname || 'Unknown', mail: [a.mailadd, a.mcity, a.mstate, a.mzip].map(v => String(v ?? '').trim()).filter(Boolean).join(', '), mailState,
+    value: a.parval || null, sqft: null, yearBuilt: a.structyear || null, use: a.parusedesc || 'Use unknown',
+    lastSalePrice: null, lastSale: sold ? sold.toISOString().slice(0, 10) : '',
+    lat: g.y, lng: g.x,
+    absentee: Boolean(a.mailadd && a.siteadd && a.mailadd.trim() !== a.siteadd.trim()),
+    outOfState: Boolean(mailState && mailState !== 'NC'), noHomestead: false,
+    vacant: a.improvval === 0, longTerm: Boolean(sold && sold.getFullYear() <= new Date().getFullYear() - 15)
+  };
+  p.source = psUrl('NC', {where: "cntyname = '" + psQuote(a.cntyname) + "' AND parno = '" + psQuote(a.parno) + "'", outFields: '*', returnGeometry: 'false'});
+  return p;
+}
+
+function psScore(p) {
+  return Math.min(100, psFlags(p).reduce((sum, [, points]) => sum + points, 0));
+}
+
+async function psFetch(url, attempts = 2) {
+  let response;
+  try {
+    response = await fetch(url, {signal: AbortSignal.timeout(30000)});
+  } catch {
+    if (attempts > 1) return psFetch(url, attempts - 1);
+    throw Error('The property records service did not respond. Narrow the search and try again.');
+  }
+  if (!response.ok) throw Error('Property records could not be retrieved. Try again.');
+  const data = await response.json();
+  if (data.error || !Array.isArray(data.features)) throw Error('The records service could not run this search. Narrow it with a city or ZIP code and try again.');
+  return data;
+}
+
+async function psSearch(event) {
+  event?.preventDefault();
+  const status = document.getElementById('psStatus');
+  const button = document.querySelector('#psForm button[type=submit]');
+  if (button.disabled) return;
+  try {
+    const c = psForm();
+    psValidate(c);
+    button.disabled = true;
+    status.textContent = 'Searching ' + c.county + ' County records…';
+    let found;
+    if (c.state === 'FL') {
+      found = await psSearchFL(c, status);
+    } else {
+      const data = await psFetch(psUrl('NC', {where: psWhere(c), outFields: 'parno,cntyname,siteadd,scity,szip,ownname,mailadd,mcity,mstate,mzip,parval,improvval,structyear,parusedesc,saledate', returnGeometry: 'true', resultRecordCount: String(PS_MAX_RESULTS)}));
+      found = {features: data.features.map(psNormalizeNC), truncated: Boolean(data.exceededTransferLimit)};
+    }
+    const seen = new Set();
+    psResults = found.features
+      .filter(p => p.parcelId && !seen.has(p.id) && seen.add(p.id))
+      .map(p => ({...p, score: psScore(p)}))
+      .sort((a, b) => b.score - a.score);
+    psRender();
+    status.textContent = psResults.length
+      ? 'Found ' + psResults.length + ' properties' + (found.truncated ? ' (first ' + PS_MAX_RESULTS + ' shown — add filters to narrow).' : '.') + ' Ranked by opportunity signals.'
+      : 'No matching properties found.';
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function psCard(p, index) {
+  const flags = psFlags(p).map(([label]) => `<span class="pill warm">${escapeHtml(label)}</span>`).join(' ');
+  const facts = [p.city, p.zip, p.use, p.value ? 'Value ' + fmt(p.value) : '', p.sqft ? p.sqft.toLocaleString() + ' sq ft' : '',
+    p.yearBuilt ? 'Built ' + p.yearBuilt : '', p.lastSale ? 'Last sale ' + p.lastSale + (p.lastSalePrice ? ' for ' + fmt(p.lastSalePrice) : '') : ''].filter(Boolean);
+  return `<article class="lead" id="psCard${index}"><strong>${escapeHtml(p.address)}</strong> <span class="pill ${p.score >= 40 ? 'hot' : p.score >= 20 ? 'warm' : 'cold'}">Opportunity ${p.score}/100</span>
+  <div class="small">${escapeHtml(facts.join(' · '))}</div>
+  <div class="small">Owner: ${escapeHtml(p.owner)}${p.mail ? ' · Mailing: ' + escapeHtml(p.mail) : ''}</div>
+  <div>${flags}</div>
+  <div class="flex" style="margin-top:6px"><button type="button" onclick="psSaveLead(${index})">Save as lead</button>${p.state === 'FL' ? `<button type="button" onclick="psComps(${index})">Comps &amp; value</button>` : ''}<a class="small" href="${escapeHtml(p.source)}" target="_blank" rel="noopener" style="align-self:center">Official record</a></div>
+  <div id="psComps${index}"></div></article>`;
+}
+
+function psRender() {
+  document.getElementById('psResults').innerHTML = psResults.map(psCard).join('');
+  document.getElementById('psBulk').classList.toggle('hidden', !psResults.length);
+  psDrawMap();
+}
+
+function psLoadLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (psLeafletLoading) return psLeafletLoading;
+  psLeafletLoading = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='; css.crossOrigin = '';
+    const js = document.createElement('script');
+    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='; js.crossOrigin = '';
+    js.onload = resolve; js.onerror = () => { psLeafletLoading = null; reject(Error('Map could not load.')); };
+    document.head.append(css, js);
+  });
+  return psLeafletLoading;
+}
+
+async function psDrawMap() {
+  const box = document.getElementById('psMap');
+  try { await psLoadLeaflet(); } catch { box.textContent = 'Map unavailable. Results are listed below.'; return; }
+  if (!psMap) {
+    psMap = L.map(box).setView([28.1, -81.6], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'}).addTo(psMap);
+    psMarkers = L.layerGroup().addTo(psMap);
+  }
+  psMap.invalidateSize();
+  psMarkers.clearLayers();
+  const points = [];
+  psResults.forEach((p, index) => {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+    points.push([p.lat, p.lng]);
+    const color = p.score >= 40 ? '#dc2626' : p.score >= 20 ? '#f59e0b' : '#2563eb';
+    L.circleMarker([p.lat, p.lng], {radius: 7, color, fillColor: color, fillOpacity: .8, weight: 1})
+      .bindTooltip(p.address + ' · ' + p.score + '/100')
+      .on('click', () => document.getElementById('psCard' + index)?.scrollIntoView({behavior: 'smooth', block: 'center'}))
+      .addTo(psMarkers);
+  });
+  if (points.length) psMap.fitBounds(points, {padding: [20, 20], maxZoom: 16});
+}
+
+function psLeadFrom(p) {
+  const lead = {
+    a: p.address, c: p.county, city: p.city, state: p.state, parcelId: p.parcelId,
+    propertyType: p.vacant ? 'Vacant Land' : p.useCode === '001' ? 'House' : '',
+    owner: p.owner, mail: p.mail, equity: null, vault: 0,
+    absentee: +(p.absentee || p.outOfState), vacant: 0, tax: 0, fore: 0,
+    estimatedValue: p.value, source: p.source,
+    notes: ['Property Search', p.use, ...psFlags(p).map(([label]) => label), p.value ? 'Assessed value ' + fmt(p.value) : ''].filter(Boolean).join(' · ')
+  };
+  lead.score = scoreOf(lead);
+  lead.status = labelOf(lead.score);
+  return lead;
+}
+
+function psIsSaved(p) {
+  return leads.some(l => (l.parcelId && l.parcelId === p.parcelId && l.c === p.county) || l.a.trim().toUpperCase() === p.address.trim().toUpperCase() && (l.city || '').toUpperCase() === p.city.toUpperCase());
+}
+
+function psSaveLead(index) {
+  const p = psResults[index];
+  const status = document.getElementById('psStatus');
+  if (psIsSaved(p)) { status.textContent = 'This property is already in Property Leads.'; return; }
+  leads.unshift(psLeadFrom(p));
+  try { save(); } catch { leads.shift(); status.textContent = 'The lead could not be saved on this device.'; return; }
+  render();
+  status.textContent = 'Saved ' + p.address + ' to Property Leads.';
+}
+
+function psSaveAll() {
+  const fresh = psResults.filter(p => !psIsSaved(p)).map(psLeadFrom);
+  const status = document.getElementById('psStatus');
+  if (!fresh.length) { status.textContent = 'All of these properties are already saved.'; return; }
+  const before = leads.length;
+  leads.unshift(...fresh);
+  try { save(); } catch { leads.splice(0, leads.length - before); status.textContent = 'The leads could not be saved on this device.'; return; }
+  render();
+  status.textContent = 'Saved ' + fresh.length + ' properties to Property Leads.';
+}
+
+function psCsvCell(value) {
+  const text = String(value ?? '');
+  return /[",\n]/.test(text) || /^[=+\-@]/.test(text) ? '"' + text.replace(/^([=+\-@])/, "'$1").replaceAll('"', '""') + '"' : text;
+}
+
+function psExportCsv() {
+  const header = ['Opportunity score', 'Property address', 'City', 'ZIP', 'County', 'State', 'Parcel ID', 'Owner', 'Mailing address', 'Assessed value', 'Living sq ft', 'Year built', 'Use', 'Last sale', 'Last sale price', 'Signals'];
+  const rows = psResults.map(p => [p.score, p.address, p.city, p.zip, p.county, p.state, p.parcelId, p.owner, p.mail, p.value, p.sqft, p.yearBuilt, p.use, p.lastSale, p.lastSalePrice, psFlags(p).map(([label]) => label).join('; ')]);
+  const csv = [header, ...rows].map(row => row.map(psCsvCell).join(',')).join('\n');
+  const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+  const link = document.createElement('a');
+  link.href = url; link.download = 'realdeals-property-list-' + todayEastern() + '.csv'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function psMedian(values) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function psMiles(a, b) {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 7917.5 * Math.asin(Math.sqrt(h));
+}
+
+async function psComps(index) {
+  const p = psResults[index];
+  const box = document.getElementById('psComps' + index);
+  if (!Number.isFinite(p.lat)) { box.textContent = 'No map location is available for comps.'; return; }
+  box.innerHTML = '<p class="small">Finding recent qualified sales nearby…</p>';
+  try {
+    const year = new Date().getFullYear();
+    const where = 'CO_NO = ' + (PS_FL_COUNTIES.indexOf(p.county) + 11) + " AND PHY_CITY = '" + psQuote(p.city) + "' AND SALE_YR1 >= " + (year - 1);
+    const sales = [];
+    for (let page = 0, more = true; page < 3 && more; page++) {
+      const data = await psFetch(psUrl('FL', {where, outFields: 'PARCEL_ID,CO_NO,PHY_ADDR1,PHY_CITY,TOT_LVG_AR,ACT_YR_BLT,SALE_PRC1,SALE_YR1,SALE_MO1,DOR_UC,QUAL_CD1',
+        orderByFields: 'OBJECTID', returnGeometry: 'false', returnCentroid: 'true', resultOffset: String(page * PS_FL_PAGE), resultRecordCount: String(PS_FL_PAGE)}));
+      sales.push(...data.features.filter(f => f.attributes.DOR_UC === p.useCode && f.attributes.QUAL_CD1 === '01'
+        && f.attributes.SALE_PRC1 >= 10000 && f.attributes.PARCEL_ID !== p.parcelId));
+      more = Boolean(data.exceededTransferLimit);
+    }
+    const comps = sales.map(psNormalizeFL).map(c => ({...c, miles: Number.isFinite(c.lat) ? psMiles(p, c) : null}))
+      .filter(c => c.miles != null && c.miles <= 1.5).sort((a, b) => a.miles - b.miles).slice(0, 10);
+    if (!comps.length) { box.innerHTML = '<p class="small">No qualified sales of this property type within 1.5 miles in the last two years.</p>'; return; }
+    const median = psMedian(comps.map(c => c.lastSalePrice));
+    const ppsf = psMedian(comps.filter(c => c.sqft > 0).map(c => c.lastSalePrice / c.sqft));
+    const estimate = ppsf && p.sqft ? Math.round(ppsf * p.sqft) : median;
+    p.estimate = estimate;
+    box.innerHTML = `<div class="greenBox" style="margin-top:8px"><b>Estimated value: ${fmt(estimate)}</b>
+    <div class="small">Median sale ${fmt(median)}${ppsf ? ' · ' + fmt(Math.round(ppsf)) + '/sq ft' : ''} · ${comps.length} qualified sales nearby. Estimate only — verify condition and adjust.</div>
+    <ul class="small">${comps.map(c => `<li>${escapeHtml(c.address)} — ${fmt(c.lastSalePrice)} (${escapeHtml(c.lastSale)})${c.sqft ? ' · ' + c.sqft.toLocaleString() + ' sq ft' : ''}${c.miles != null ? ' · ' + c.miles.toFixed(2) + ' mi' : ''}</li>`).join('')}</ul>
+    <button type="button" class="btn ghost" onclick="psUseEstimate(${index})">Use as ARV in offer calculator</button></div>`;
+  } catch (error) {
+    box.innerHTML = '<p class="small">' + escapeHtml(error.message) + '</p>';
+  }
+}
+
+function psUseEstimate(index) {
+  const field = document.getElementById('arv');
+  field.value = psResults[index].estimate;
+  const view = field.closest('[id^="view-"]');
+  if (view) go(view.id.slice(5));
+  field.scrollIntoView({behavior: 'smooth', block: 'center'});
+  calcOffer();
+}
+
+function psSavedSearches() {
+  try { return JSON.parse(localStorage.getItem(psSavedKey) || '[]'); } catch { return []; }
+}
+
+function psSaveSearch() {
+  const status = document.getElementById('psStatus');
+  try {
+    const c = psForm();
+    psValidate(c);
+    const name = prompt('Name this saved search', [c.county, c.city || c.zip, c.absentee ? 'absentee' : '', c.estate ? 'estate' : ''].filter(Boolean).join(' '));
+    if (!name) return;
+    const list = psSavedSearches().filter(s => s.name !== name);
+    list.unshift({name: name.slice(0, 80), criteria: c, savedAt: new Date().toISOString()});
+    localStorage.setItem(psSavedKey, JSON.stringify(list.slice(0, 50)));
+    psRenderSaved();
+    status.textContent = 'Search saved.';
+  } catch (error) { status.textContent = error.message; }
+}
+
+function psRunSaved(index) {
+  const saved = psSavedSearches()[index];
+  if (!saved) return;
+  const form = document.getElementById('psForm');
+  form.state.value = saved.criteria.state;
+  psCounties();
+  for (const [key, value] of Object.entries(saved.criteria)) {
+    const field = form.elements[key];
+    if (!field || key === 'state') continue;
+    if (field.type === 'checkbox') field.checked = Boolean(value); else field.value = value ?? '';
+  }
+  psSearch();
+}
+
+function psDeleteSaved(index) {
+  const list = psSavedSearches();
+  list.splice(index, 1);
+  localStorage.setItem(psSavedKey, JSON.stringify(list));
+  psRenderSaved();
+}
+
+function psRenderSaved() {
+  const list = psSavedSearches();
+  document.getElementById('psSaved').innerHTML = list.length ? list.map((s, i) =>
+    `<div class="flex" style="margin:4px 0"><button type="button" onclick="psRunSaved(${i})">${escapeHtml(s.name)}</button><button type="button" style="flex:0 0 auto" aria-label="Delete saved search ${escapeHtml(s.name)}" onclick="psDeleteSaved(${i})">✕</button></div>`).join('')
+    : '<p class="small">No saved searches yet.</p>';
+}
+
+function psCounties() {
+  const form = document.getElementById('psForm');
+  const state = form.state.value;
+  const names = state === 'FL' ? PS_FL_COUNTIES : PS_NC_COUNTIES;
+  form.county.innerHTML = '<option value="">Select county</option>' + names.map(n => `<option>${n}</option>`).join('');
+  form.noHomestead.closest('label').classList.toggle('hidden', state !== 'FL');
+}
+
+function propSearchShown() {
+  psRenderSaved();
+  psDrawMap();
+}
+
+document.getElementById('psForm').addEventListener('submit', psSearch);
+document.getElementById('psForm').state.addEventListener('change', psCounties);
+psCounties();

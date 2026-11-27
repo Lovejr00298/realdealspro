@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RealDealsPro™ - Florida Off Market Deal System</title><meta name="theme-color" content="#0b1e3a">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RealDealsPro">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;background:#f3f5f8;color:#111}
 header{background:#0b1e3a;color:#fff;padding:16px 14px 12px;position:sticky;top:0;z-index:5}
@@ -30,6 +31,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 .call{background:#16a34a;color:#fff}.text{background:#2563eb;color:#fff}
 .hidden{display:none}.greenBox{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px}
 .yellowBox{background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:12px}
+.psChecks label{display:flex;gap:8px;align-items:flex-start;margin:6px 0}
 </style></head><body>
 <header><h1>SQPR RealDealsPro™</h1><p>Florida Off Market Deal System • realdeals.proverifyfield.com</p><span id="modeBadge" class="badge">DEVICE WORKSPACE — LIVE SERVICES NOT CONNECTED</span><p class="small" style="color:#fff">Repair release • November 19, 2026</p></header>
 <div class="wrap">
@@ -44,6 +46,33 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <button class="btn green" onclick="runAutomation()">PROCESS SAVED RECORDS</button>
 <button class="btn ghost" onclick="resetStarter()">Reset Starter Data</button>
 <h3>Processing Log</h3><div id="logs"></div></div>
+<section id="view-prop-search" class="panel hidden">
+<h2>Property Search</h2>
+<p class="small">Search official county parcel records across Florida and North Carolina. Results are ranked by opportunity signals such as absentee, out-of-state, and estate owners. Values are assessed values, not appraisals.</p>
+<form id="psForm">
+<div class="row"><label>State <select name="state"><option value="FL">Florida</option><option value="NC">North Carolina</option></select></label><label>County <select name="county"></select></label></div>
+<div class="row"><label>City <input name="city" maxlength="60" placeholder="Tampa"></label><label>ZIP code <input name="zip" inputmode="numeric" maxlength="5"></label></div>
+<div class="row"><label>Street <input name="street" maxlength="60" placeholder="Main"></label><label>Owner name (last name first) <input name="owner" maxlength="60" placeholder="Smith"></label></div>
+<label>Property type <select name="type"><option value="">All types</option><option value="sfr">Single family</option><option value="condo">Condominium</option><option value="mobile">Mobile home</option><option value="multi">Multi-family</option><option value="vacant">Vacant land</option><option value="commercial">Commercial</option></select></label>
+<div class="row"><label>Min value $ <input name="minValue" type="number" min="0"></label><label>Max value $ <input name="maxValue" type="number" min="0"></label></div>
+<label>Built in or before year <input name="maxYear" type="number" min="1800" max="2100"></label>
+<fieldset class="psChecks"><legend>Opportunity filters</legend>
+<label><input style="width:auto" type="checkbox" name="absentee"> Absentee owner</label>
+<label><input style="width:auto" type="checkbox" name="outOfState"> Out-of-state owner</label>
+<label><input style="width:auto" type="checkbox" name="noHomestead"> No homestead exemption (likely non-owner occupied)</label>
+<label><input style="width:auto" type="checkbox" name="estate"> Estate, trust, or heirs</label>
+<label><input style="width:auto" type="checkbox" name="corporate"> Company owner (LLC, Inc)</label>
+<label><input style="width:auto" type="checkbox" name="longTerm"> Owned 15+ years</label>
+</fieldset>
+<button class="btn" type="submit">Search properties</button>
+</form>
+<button class="btn ghost" type="button" onclick="psSaveSearch()">Save this search</button>
+<p id="psStatus" role="status"></p>
+<div id="psMap" style="height:320px;border-radius:12px;margin:8px 0;background:#e5e7eb"></div>
+<div id="psBulk" class="flex hidden"><button type="button" onclick="psSaveAll()">Save all to leads</button><button type="button" onclick="psExportCsv()">Export list (CSV)</button></div>
+<div id="psResults"></div>
+<h3>Saved searches</h3><div id="psSaved"></div>
+</section>
 <section id="view-parcel-search" class="panel hidden">
 <h2>Find Opportunities</h2>
 <label>County <select id="opportunityCounty"><option>Polk</option></select></label>
@@ -294,9 +323,9 @@ function seed(preserve=false){
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
 let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
+const tabs=[['dashboard','Dashboard'],['prop-search','Property Search'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
-function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadNamedReport('unclaimed')}
+function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadNamedReport('unclaimed');if(t==='prop-search')propSearchShown()}
 function runAutomation(){
  const county=document.getElementById('county').value;let found=0,hot=0,vaulted=0;
  leads.forEach(l=>{if(l.c!==county)return;found++;if(document.getElementById('autoScore').checked){l.score=scoreOf(l);l.status=labelOf(l.score)}if(scoreOf(l)>=80){hot++;if(document.getElementById('autoVault').checked&&!l.vault){l.vault=1;vaulted++}}});
@@ -1237,5 +1266,6 @@ async function cloudConfirmEmail(){return cloudTask(async()=>{
  document.getElementById('cloudEmail').value=email;cloudMsg('Email confirmation accepted. Sign in above with your RealDealsPro™ password. Local records are unchanged.');
 })}
 
-</script></body></html>
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script><script src="property-search.js"></script></body></html>
 
