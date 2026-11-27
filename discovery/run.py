@@ -7,10 +7,16 @@ import sys
 from hillsborough import fetch_candidates
 from pasco import fetch_latest
 from marion import fetch_marion
+from georgia import checked, fetch_cobb, fetch_dekalb, fetch_gwinnett
 
 
 def run():
-    sources = {"Pasco": fetch_latest, "Hillsborough": fetch_candidates, "Marion": fetch_marion}
+    sources = {
+        "Pasco": fetch_latest, "Hillsborough": fetch_candidates, "Marion": fetch_marion,
+        "DeKalb, GA": lambda: checked(fetch_dekalb(), "DeKalb"),
+        "Gwinnett, GA": lambda: checked(fetch_gwinnett(), "Gwinnett"),
+        "Cobb, GA": lambda: checked(fetch_cobb(), "Cobb"),
+    }
     results = {}
     with ThreadPoolExecutor(max_workers=len(sources)) as pool:
         jobs = {county: pool.submit(fetch) for county, fetch in sources.items()}
