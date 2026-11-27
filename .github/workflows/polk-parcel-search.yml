@@ -30,7 +30,7 @@ jobs:
               status = page.locator('#parcelSearchStatus')
               search.click()
               expect(status).to_contain_text('Enter a city')
-              page.locator('[name=city]').first.fill('Bartow')
+              page.locator('#parcelSearchForm [name=city]').fill('Bartow')
               page.select_option('#parcelSearchForm [name=use]', 'vacant')
               search.click()
               first = page.locator('#parcelSearchResults article').first
