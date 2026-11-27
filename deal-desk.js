@@ -152,8 +152,7 @@ function ddSetReviewQuiet(id, status) {
 }
 
 function ddSuppressed(contact) {
-  const value = String(contact || '').trim().toLowerCase();
-  return Boolean(value) && ddRead('rdp_suppression_v1', []).some(entry => entry.value === value);
+  return typeof orSuppressed === 'function' && orSuppressed(contact);
 }
 
 function ddRenderReview() {
