@@ -24,7 +24,7 @@ jobs:
           open('test-private-key.txt', 'w').write(base64.b64encode(key.private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())).decode())
           pem = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
           unclaimed = {'Volusia': {'status': 'ok', 'records': [{'county': 'Volusia', 'name': 'JANE TESTER', 'reference': '153969', 'date': '2024-07-11', 'category': 'POOLED CASH', 'amount': 177.0, 'source': 'https://www.clerk.org/pdf/notices/2026-Unclaimed-Payments-Notice.pdf'}]}}
-          json.dump(seal({'fetchedAt': '2026-11-27T00:00:00Z', 'unclaimed': unclaimed, 'surplusNames': {'Pasco': {'2023-0045': 'DOE JOHN'}}}, pem), open('county-private.json', 'w'))
+          json.dump(seal({'fetchedAt': '2026-11-27T00:00:00Z', 'unclaimed': unclaimed, 'surplusNames': {'Pasco': {'2023-0045': 'DOE JOHN'}}, 'filings': {'Hillsborough': {'preforeclosure': {'status': 'ok', 'caseSearch': 'https://hover.hillsclerk.com/', 'records': [{'county': 'Hillsborough', 'caseNo': '26-CA-000001', 'filed': '2026-11-25', 'type': 'Mortgage Foreclosure - Homestead', 'kind': 'Mortgage foreclosure', 'homestead': True, 'estate': False, 'plaintiff': 'TEST BANK', 'owners': ['PAT OWNER'], 'property': {'street': '5108 N 21st St', 'city': 'Tampa', 'state': 'FL', 'zip': '33610'}, 'source': 'https://publicrec.hillsclerk.com/Civil/dailyfilings/x.csv'}]}, 'probate': {'status': 'ok', 'caseSearch': 'https://hover.hillsclerk.com/', 'records': [{'county': 'Hillsborough', 'caseNo': '26-CP-000001', 'filed': '2026-11-23', 'type': 'Formal Administration', 'decedent': 'LEE ESTATE', 'died': '2025-12-01', 'property': {'street': '7 Pine St', 'city': 'Tampa', 'state': 'FL', 'zip': '33607'}, 'contacts': [{'role': 'Petitioner', 'name': 'SAM HEIR', 'address': {'street': '1 Oak Ave', 'city': 'Riverview', 'state': 'FL', 'zip': '33579'}}], 'attorney': 'ANN LAW', 'source': 'https://publicrec.hillsclerk.com/Probate/dailyfilings/x.csv'}]}}}}, pem), open('county-private.json', 'w'))
           sales = {'Osceola': {'status': 'ok', 'records': [{'county': 'Osceola', 'caseNo': '2025 CA 000001 MF', 'saleDate': '2099-12-01', 'plaintiff': 'TEST BANK NA', 'source': 'https://courts.osceolaclerk.com/reports/CivilMortgageForeclosuresWeb.pdf'},
                                                       {'county': 'Osceola', 'caseNo': '2024 CA 000009 MF', 'saleDate': '2025-01-15', 'plaintiff': 'OLD BANK', 'dropped': True, 'source': 'https://courts.osceolaclerk.com/reports/CivilMortgageForeclosuresWeb.pdf'}]}}
           counties = {'Pasco': {'status': 'ok', 'records': [{'taxDeedId': '2023-0045', 'reportedBalance': 23011.34, 'parcelId': '21-25-17-0110-19700-0070', 'source': 'https://app.pascoclerk.com/report.xlsx'}]}}
@@ -70,6 +70,19 @@ jobs:
            expect(page.locator('#unclaimedNamedReport').get_by_role('button', name='Search')).to_be_visible()
            page.get_by_label('Search names').fill('nobody')
            expect(page.locator('#unclaimedNamedReport')).to_contain_text('No matching records')
+           page.get_by_role('button', name='Find deals', exact=True).click()
+           page.get_by_role('button', name='Pre-foreclosures', exact=True).click()
+           expect(page.locator('#filings-preforeclosure')).to_contain_text('1 new pre-foreclosure filings')
+           expect(page.locator('#filings-preforeclosure')).to_contain_text('Owner: PAT OWNER')
+           page.locator('#filings-preforeclosure').get_by_role('button', name='Save as lead').click()
+           expect(page.locator('#filings-preforeclosure').get_by_role('button', name='Saved to leads')).to_be_disabled()
+           assert page.evaluate("leads[0].a === '5108 N 21st St' && leads[0].fore === 1")
+           expect(page.locator('#filings-preforeclosure').get_by_role('button', name='Get phone and email')).to_be_visible()
+           page.get_by_role('button', name='Probate leads', exact=True).click()
+           expect(page.locator('#filings-probate')).to_contain_text('Decedent: LEE ESTATE')
+           expect(page.locator('#filings-probate')).to_contain_text('Petitioner SAM HEIR (Riverview, FL)')
+           page.locator('#filings-probate').get_by_label('Search filings').fill('nobody')
+           expect(page.locator('#filings-probate')).to_contain_text('No matching filings')
            page.evaluate("go('surplus')")
            expect(page.locator('#foreclosureSurplusReview')).to_contain_text('2024 CA 000009 MF')
            expect(page.locator('#foreclosureSurplusReview')).to_contain_text('confirm the result')

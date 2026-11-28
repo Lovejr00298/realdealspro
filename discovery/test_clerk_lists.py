@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from datetime import date
 from clerk_lists import merge_sale_history, parse_bay_sales, parse_manatee_unclaimed, parse_osceola_sales, parse_volusia_unclaimed
 from publish_private import seal
+from court_filings import parse_civil, parse_probate
 
 
 class ClerkListTests(unittest.TestCase):
@@ -53,6 +54,30 @@ class ClerkListTests(unittest.TestCase):
         self.assertEqual((volusia[0]["name"], volusia[0]["amount"], volusia[0]["date"]), ("AAMIR ISLAM", 177.0, "2024-07-11"))
         manatee = parse_manatee_unclaimed("ADAMS, STEPHEN $1,000.0 0 2024MM002573AX\nABIGAIL BOCK $15.00 JURY SERVICE\n")
         self.assertEqual([(r["name"], r["amount"]) for r in manatee], [("ADAMS, STEPHEN", 1000.0), ("ABIGAIL BOCK", 15.0)])
+
+    def test_civil_filings_keep_foreclosures_with_owner_and_property(self):
+        head = 'CaseCategory,CaseTypeDescription,CaseNumber,Title,FilingDate,PartyType,FirstName,MiddleName,LastName/CompanyName,PartyAddress,Attorney\n'
+        rows = ['"CV","Mortgage Foreclosure - Homestead -3- $250,000 or More","26-CA-1","BANK vs DOE","11/25/2026","Plaintiff","","","MIDFIRST BANK","401 W Linton Blvd, Delray Beach, FL 33444","No Attorney"',
+                '"CV","Mortgage Foreclosure - Homestead -3- $250,000 or More","26-CA-1","BANK vs DOE","11/25/2026","Defendant","Jane","Q","Doe","PO Box 9, Tampa, FL 33601","No Attorney"',
+                '"CV","Mortgage Foreclosure - Homestead -3- $250,000 or More","26-CA-1","BANK vs DOE","11/25/2026","Defendant","","","UNKNOWN SPOUSE OF JANE DOE","5108 N 21st St, Tampa, FL 33610","No Attorney"',
+                '"CV","Mortgage Foreclosure - Homestead -3- $250,000 or More","26-CA-1","BANK vs DOE","11/25/2026","Defendant","","","UNKNOWN TENANT #1","5108 N 21st St, Tampa, FL 33610","No Attorney"',
+                '"CV","CC Debt Owed $8,000.01 to  $15,000.00","26-CC-2","A vs B","11/25/2026","Defendant","Bob","","Smith","1 Main St, Tampa, FL 33602","No Attorney"',
+                '"CV","CC Enforce Lien $0.00 to  $15,000.00","26-CC-3","HOA vs C","11/25/2026","Defendant","Cal","","Estate of Lee","9 Elm St, Brandon, FL 33511","No Attorney"']
+        leads = parse_civil(head + "\n".join(rows), "src")
+        self.assertEqual([l["caseNo"] for l in leads], ["26-CA-1", "26-CC-3"])
+        first, lien = leads
+        self.assertEqual((first["owners"], first["plaintiff"], first["homestead"], first["filed"]), (["Jane Q Doe"], "MIDFIRST BANK", True, "2026-11-25"))
+        self.assertEqual(first["property"], {"street": "5108 N 21st St", "city": "Tampa", "state": "FL", "zip": "33610"})
+        self.assertEqual((lien["kind"], lien["estate"]), ("HOA or lien foreclosure", True))
+
+    def test_probate_filings_keep_estates_with_decedent_and_contacts(self):
+        head = 'CaseCategory,CaseTypeDescription,CaseNumber,Title,FilingDate,PartyType,FirstName,MiddleName,LastName/CompanyName,DateofDeath,PartyAddress,Attorney\n'
+        rows = ['"PR","Formal Administration","26-CP-1","DOE - Estate","11/23/2026","Petitioner","SAM","","DOE","","1 Oak Ave, Riverview, FL 33579","ANN LAW "',
+                '"PR","Formal Administration","26-CP-1","DOE - Estate","11/23/2026","Decedent","PAT","","DOE","12/23/2025","7 Pine St, Tampa, FL 33607","No Attorney"',
+                '"PR","Pre - Need Guardianship","26-CP-2","X","11/23/2026","Ward","AL","","X","","2 Bay St, Tampa, FL 33602","No Attorney"']
+        lead, = parse_probate(head + "\n".join(rows), "src")
+        self.assertEqual((lead["decedent"], lead["died"], lead["property"]["street"], lead["attorney"]), ("PAT DOE", "2025-12-23", "7 Pine St", "ANN LAW"))
+        self.assertEqual(lead["contacts"], [{"role": "Petitioner", "name": "SAM DOE", "address": {"street": "1 Oak Ave", "city": "Riverview", "state": "FL", "zip": "33579"}}])
 
     def test_sealed_payload_opens_with_private_key(self):
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)

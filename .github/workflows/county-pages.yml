@@ -16,7 +16,7 @@ on:
       - .github/workflows/county-pages.yml
   workflow_dispatch:
   schedule:
-    - cron: '17 14 * * 1,4'
+    - cron: '17 14 * * 1-5'
 
 permissions:
   contents: read
