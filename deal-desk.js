@@ -333,9 +333,12 @@ async function ddLoadSignatures() {
   const list = document.getElementById('ddSignList');
   if (!list) return;
   if (!cloudSession) { list.textContent = 'Sign in under Settings to send and track e-signatures.'; return; }
+  const request = Symbol();
+  list.signRequest = request;
   try {
     await cloudRefresh();
     const rows = await cloudRequest('/rest/v1/signature_requests?select=id,title,signer_name,case_key,status,signed_at,created_at&status=neq.void&order=created_at.desc&limit=50');
+    if (list.signRequest !== request) return;
     let advanced = false;
     for (const row of rows) {
       if (row.status !== 'signed' || !row.case_key) continue;
@@ -363,7 +366,7 @@ async function ddLoadSignatures() {
       return line;
     }) : [Object.assign(document.createElement('p'), {textContent: 'No documents sent for signature yet.'})]));
   } catch (error) {
-    list.textContent = 'E-signature requests are unavailable right now.';
+    if (list.signRequest === request) list.textContent = 'E-signature requests are unavailable right now.';
   }
 }
 

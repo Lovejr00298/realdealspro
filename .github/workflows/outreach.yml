@@ -127,3 +127,6 @@ jobs:
           cd supabase/functions/outreach-send
           deno check index.ts
           deno test --allow-env index_test.ts
+          cd ../skip-trace
+          deno check index.ts
+          deno test --allow-env index_test.ts

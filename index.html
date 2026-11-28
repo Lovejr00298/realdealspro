@@ -1310,6 +1310,25 @@ async function loadSurplusNames(){
  if(cloudSession&&!privateLists){try{await cloudRefresh();privateLists ||= await openPrivateLists();}catch{}}
  showCountyDiscovery();
 }
+async function skipTraceOwner(button){
+ const out=button.nextElementSibling?.classList.contains('skipResult')?button.nextElementSibling:Object.assign(document.createElement('div'),{className:'skipResult'});
+ button.after(out);
+ const parts=button.dataset.mail.split(',').map(part=>part.trim()).filter(Boolean);
+ try{
+  if(!cloudSession)throw Error('Sign in under Settings first.');
+  if(parts.length<4)throw Error('This mailing address is incomplete.');
+  if(!confirm('Look up phone and email for '+button.dataset.owner+'? Your skip-tracing provider charges for each new lookup.'))return;
+  button.disabled=true;
+  out.textContent='Looking up…';
+  await cloudRefresh();
+  const response=await fetch(CLOUD_URL+'/functions/v1/skip-trace',{method:'POST',headers:{apikey:CLOUD_KEY,Authorization:'Bearer '+cloudSession.access_token,'Content-Type':'application/json'},
+   body:JSON.stringify({name:button.dataset.owner,street:parts.slice(0,-3).join(', '),city:parts.at(-3),state:parts.at(-2),zip:parts.at(-1)})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||'Lookup failed.');
+  const found=[...data.phones.map(phone=>phone.number.replace(/(\d{3})(\d{3})(\d{4})/,'($1) $2-$3')+(phone.type?' '+phone.type:'')+(phone.dnc?' (Do Not Call)':'')),...data.emails];
+  out.textContent=found.length?found.join(' · '):'No phone or email found.';
+ }catch(error){out.textContent=error.message;button.disabled=false;}
+}
 async function findSurplusOwner(button){
  const out=button.nextElementSibling;
  const {county,parcel,owner}=button.dataset;
@@ -1319,13 +1338,14 @@ async function findSurplusOwner(button){
   const result=await psOwnerLookup(county,parcel,owner);
   const rows=[];
   if(result.parcel)rows.push(['Property record now lists '+result.parcel.owner+' · Mailing: '+(result.parcel.mail||'none listed')+'. After a tax-deed sale this is often the new buyer.',result.parcel.source]);
-  for(const p of result.matches)rows.push(['Owner-name match: '+p.owner+' · Property: '+p.address+(p.city?', '+p.city:'')+' · Mailing: '+(p.mail||'none listed'),p.source]);
+  for(const p of result.matches)rows.push(['Owner-name match: '+p.owner+' · Property: '+p.address+(p.city?', '+p.city:'')+' · Mailing: '+(p.mail||'none listed'),p.source,p]);
   if(!rows.length)rows.push([result.supported?'No property records found for this parcel or owner name.':'Owner lookup is not available for this county yet.']);
-  rows.push(['Phone numbers and emails need a skip-tracing service. Confirm identity before contacting anyone.']);
-  out.replaceChildren(...rows.map(([text,href])=>{
+  rows.push(['Get phone and email runs a paid skip-tracing lookup. Confirm identity and check Do Not Call status before calling.']);
+  out.replaceChildren(...rows.map(([text,href,match])=>{
    const line=document.createElement('div');
    line.textContent=text+' ';
    if(href&&/^https:/.test(href)){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Record';line.append(a);}
+   if(match?.mail){const get=Object.assign(document.createElement('button'),{type:'button',className:'btn ghost',textContent:'Get phone and email'});get.dataset.owner=match.owner;get.dataset.mail=match.mail;get.addEventListener('click',()=>skipTraceOwner(get));line.append(' ',get);}
    return line;
   }));
  }catch(error){out.textContent=error.message||'Property records are unavailable right now.';}
