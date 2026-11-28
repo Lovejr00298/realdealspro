@@ -236,6 +236,40 @@ async function psSearchCounty(c, status) {
   return {features: matches.slice(0, PS_MAX_RESULTS), truncated: more || matches.length > PS_MAX_RESULTS};
 }
 
+async function psOwnerLookup(county, parcelId, ownerName) {
+  const base = county.replace(/, [A-Z]{2}$/, '');
+  const all = String(ownerName || '').toUpperCase().replace(/[^A-Z0-9&' -]/g, ' ').split(/\s+/).filter(Boolean);
+  const cut = all.findIndex(word => /\d/.test(word));
+  const words = cut < 0 ? all : all.slice(0, cut);
+  const names = words.length >= 2 ? [...new Set([words[0] + ' ' + words[1], words[words.length - 1] + ' ' + words[0]])] : [];
+  const like = field => '(' + names.map(name => field + " LIKE '" + psQuote(name) + "%'").join(' OR ') + ')';
+  const parcels = parcelId ? [...new Set([parcelId, parcelId.replace(/[^A-Za-z0-9]/g, ''), parcelId.replace(/^R/, '')])] : [];
+  let query, idWhere, nameWhere;
+  if (county.endsWith(', GA')) {
+    const s = PS_COUNTY_SOURCES.GA[base];
+    if (!s) return {supported: false, parcel: null, matches: []};
+    const fields = [...new Set([s.id, s.address, s.city, s.zip, s.owner, ...s.mail].filter(Boolean))].join(',');
+    query = where => psFetch(s.url + '?' + new URLSearchParams({f: 'json', where, outFields: fields, returnGeometry: 'false', resultRecordCount: '10'}))
+      .then(data => data.features.map(f => psNormalizeCounty('GA', base, s, f)));
+    idWhere = id => s.id + " = '" + psQuote(id) + "'";
+    nameWhere = like('UPPER(' + s.owner + ')');
+  } else {
+    const index = PS_FL_COUNTIES.indexOf(base);
+    if (index < 0) return {supported: false, parcel: null, matches: []};
+    const co = ' AND CO_NO = ' + (index + 11);
+    query = where => psFetch(psUrl('FL', {where: where + co, outFields: PS_FL_FIELDS, returnGeometry: 'false', resultRecordCount: '10'})).then(data => data.features.map(psNormalizeFL));
+    idWhere = id => "PARCEL_ID = '" + psQuote(id) + "'";
+    nameWhere = like('OWN_NAME');
+  }
+  let parcel = null;
+  for (const id of parcels) {
+    [parcel] = await query(idWhere(id));
+    if (parcel) break;
+  }
+  const matches = names.length ? (await query(nameWhere)).filter(p => p.parcelId !== parcel?.parcelId) : [];
+  return {supported: true, parcel: parcel || null, matches};
+}
+
 function psUrl(state, params) {
   const base = state === 'FL' ? PS_FL_URL : PS_NC_URL;
   return base + '?' + new URLSearchParams({f: 'json', outSR: '4326', ...params});

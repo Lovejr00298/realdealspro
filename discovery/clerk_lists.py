@@ -1,5 +1,5 @@
 """Read official clerk foreclosure sale lists and unclaimed-money notices."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import re
 import sys
@@ -35,12 +35,13 @@ def parse_osceola_sales(text, source=OSCEOLA_SALES):
 def parse_bay_sales(text, source=BAY_SALES):
     sales = []
     for case, detail, sale, amount in re.findall(r"^(\d{8}CA)\s*\n(.*?)(\d{2}-\d{2}-\d{4})\s*\n\$([\d,]+\.\d{2})", text, re.M | re.S):
-        if "CANCEL" in detail.upper():
-            continue
         address = " ".join(line.strip() for line in detail.splitlines()
-                           if line.strip() and not re.search(r"SALE WILL BE HELD|realforeclose", line, re.I))
-        sales.append({"county": "Bay", "caseNo": case, "saleDate": iso(sale, "%m-%d-%Y"),
-                      "judgment": money(amount), "address": address, "source": source})
+                           if line.strip() and not re.search(r"SALE WILL BE HELD|realforeclose|CANCEL", line, re.I))
+        record = {"county": "Bay", "caseNo": case, "saleDate": iso(sale, "%m-%d-%Y"),
+                  "judgment": money(amount), "address": address, "source": source}
+        if "CANCEL" in detail.upper():
+            record["canceled"] = True
+        sales.append(record)
     return sales
 
 
@@ -78,6 +79,24 @@ def marion_checks():
     rows = [CHECK_ROW.fullmatch(line) for line in layout_text(fetch(CHECKS)).splitlines()]
     return [{"county": "Marion", "name": m[4], "reference": m[2], "date": iso(m[1], "%m/%d/%y"),
              "amount": money(m[3]), "source": CHECKS} for m in rows if m and money(m[3]) > 0]
+
+
+def merge_sale_history(current, previous, today, keep_days=120):
+    """Keep sales that dropped off a clerk list after their sale date so the app can flag them for a surplus check."""
+    cutoff, now = (today - timedelta(days=keep_days)).isoformat(), today.isoformat()
+    merged = {}
+    for county, result in current.items():
+        old = (previous or {}).get(county) or {}
+        old_records = old.get("records", []) if old.get("status") == "ok" else []
+        if result.get("status") != "ok":
+            kept = [r for r in old_records if r.get("saleDate", "") >= cutoff]
+            merged[county] = {"status": "ok", "stale": True, "records": kept} if kept else result
+            continue
+        seen = {r["caseNo"] for r in result["records"]}
+        dropped = [{**r, "dropped": True} for r in old_records
+                   if r["caseNo"] not in seen and not r.get("canceled") and cutoff <= r.get("saleDate", "") <= now]
+        merged[county] = {**result, "records": result["records"] + dropped}
+    return merged
 
 
 def gather(sources):

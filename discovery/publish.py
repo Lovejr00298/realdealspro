@@ -1,12 +1,24 @@
 """Generate the public county queue without names or internal error details."""
+from datetime import date
 import json
 from pathlib import Path
 import sys
+from urllib.request import urlopen
 
-from clerk_lists import foreclosure_sales, gather
+from clerk_lists import foreclosure_sales, gather, merge_sale_history
 from run import run
 
+PREVIOUS = "https://realdeals.proverifyfield.com/county-discovery.json"
 PUBLIC_FIELDS = ("taxDeedId", "reportedBalance", "source", "reportDate", "parcelId")
+
+
+def previous_sales():
+    try:
+        with urlopen(PREVIOUS, timeout=20) as response:
+            return json.load(response).get("foreclosureSales", {})
+    except Exception as error:
+        print(f"Previous sale lists: {error}", file=sys.stderr)
+        return {}
 
 
 def public_batch(batch):
@@ -31,7 +43,7 @@ def public_batch(batch):
             counties[county]["stale"] = True
     if not any(result["status"] == "ok" and not result.get("stale") for result in counties.values()):
         raise RuntimeError("All county sources failed")
-    return {"fetchedAt": batch["fetchedAt"], "counties": counties, "foreclosureSales": gather(foreclosure_sales())}
+    return {"fetchedAt": batch["fetchedAt"], "counties": counties, "foreclosureSales": merge_sale_history(gather(foreclosure_sales()), previous_sales(), date.today())}
 
 
 if __name__ == "__main__":

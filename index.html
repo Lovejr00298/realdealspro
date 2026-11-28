@@ -380,6 +380,8 @@ async function loadCountyDiscovery(){
   const batch=await response.json();
   renderCountyDiscovery(batch);
   countyDiscovery=batch;
+  syncTrackedSales();
+  renderForeclosureWatch();
   showCountyDiscovery();
   status.textContent='County scan loaded. Verify each case with the clerk.';
  }catch(error){status.textContent=error.message;}
@@ -394,17 +396,20 @@ function renderCountyDiscovery(batch, selected="", query=""){
    sections.push('<p>'+escapeHtml(county)+': source unavailable on this scan.</p>');
    continue;
   }
+  const names=privateLists?.surplusNames?.[county]||{};
   const records=result.records.filter(record=>typeof record.taxDeedId==='string'&&Number.isFinite(record.reportedBalance)&&record.reportedBalance>0&&[record.taxDeedId,record.parcelId].some(value=>String(value||"").toUpperCase().includes(query)));
   const cards=records.map(record=>{
    const url=new URL(record.source);
    const source=url.protocol==='https:'&&['app.pascoclerk.com','www.hillsclerk.com','www.marioncountyclerk.org','marioncountyclerk.org','courts.osceolaclerk.com','dekalbtaxga.gov','www.gwinnetttaxcommissioner.com','www.cobbtax.gov','publicaccess.claytoncountyga.gov','tax.chathamcountyga.gov','www.clerk.org'].includes(url.hostname)
     ?` · <a href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Clerk report</a>`:'';
+   const owner=names[record.taxDeedId]||'';
    return `<div class="lead"><b>${escapeHtml(record.taxDeedId)}</b> · ${fmt(record.reportedBalance)} reported balance${source}
-    <div class="small">${escapeHtml(record.parcelId||'')}${record.reportDate?' · Report date '+escapeHtml(record.reportDate):''}</div></div>`;
+    <div class="small">${escapeHtml(record.parcelId||'')}${record.reportDate?' · Report date '+escapeHtml(record.reportDate):''}</div>${owner?`<div class="small">Former owner on clerk report: <b>${escapeHtml(owner)}</b></div>`:''}
+    <button type="button" class="btn ghost" data-county="${escapeHtml(county)}" data-parcel="${escapeHtml(record.parcelId||'')}" data-owner="${escapeHtml(owner)}" onclick="findSurplusOwner(this)">Find owner</button><div class="small" aria-live="polite"></div></div>`;
   }).join('');
   sections.push(`<details open><summary>${escapeHtml(county)} · ${records.length} to review${result.stale ? " · Last verified report (refresh unavailable)" : ""}</summary>${cards}</details>`);
  }
- return '<p>Scan time: '+escapeHtml(new Date(batch.fetchedAt).toLocaleString('en-US',{timeZone:'America/New_York'}))+' Eastern</p>'+sections.join('');
+ return (cloudSession?'':'<p class="small">Sign in under Settings to see former owner names from the clerk reports.</p>')+'<p>Scan time: '+escapeHtml(new Date(batch.fetchedAt).toLocaleString('en-US',{timeZone:'America/New_York'}))+' Eastern</p>'+sections.join('');
 }
 function importCountyCases(){
  const status=document.getElementById('sourceStatus');
@@ -715,7 +720,29 @@ async function loadForeclosureSales() {
  }
  const select = document.getElementById('fcSalesCounty');
  if (!select.options.length) select.innerHTML = Object.keys(countyDiscovery.foreclosureSales || {}).map(county => `<option>${escapeHtml(county)}</option>`).join('');
+ syncTrackedSales();
+ render();
  renderForeclosureSales();
+}
+
+function syncTrackedSales() {
+ const sales = countyDiscovery?.foreclosureSales;
+ if (!sales) return;
+ const updated = {...foreclosureWatch};
+ let changed = false;
+ for (const [key, entry] of Object.entries(updated)) {
+  if (!['Filed', 'Sale scheduled'].includes(entry.stage)) continue;
+  const sale = (sales[entry.county]?.records || []).find(record => foreclosureCaseKey(entry.county, record.caseNo) === key);
+  if (!sale) continue;
+  if (sale.canceled) updated[key] = {...entry, stage: 'Sale canceled'};
+  else if (!sale.dropped && sale.saleDate && sale.saleDate !== entry.saleDate) updated[key] = {...entry, saleDate: sale.saleDate, stage: 'Sale scheduled'};
+  else continue;
+  changed = true;
+ }
+ if (changed) {
+  localStorage.setItem(foreclosureWatchKey, JSON.stringify(updated));
+  foreclosureWatch = updated;
+ }
 }
 
 function renderForeclosureSales() {
@@ -729,8 +756,9 @@ function renderForeclosureSales() {
   return;
  }
  const today = new Date().toISOString().slice(0, 10);
- status.textContent = result.records.length + ' scheduled sales in ' + county + ' County.';
- for (const sale of result.records) {
+ const upcoming = result.records.filter(sale => !sale.canceled && !sale.dropped && sale.saleDate >= today);
+ status.textContent = upcoming.length + ' scheduled sales in ' + county + ' County.' + (result.stale ? ' Showing the last list the clerk published.' : '');
+ for (const sale of upcoming) {
   const row = document.createElement('div');
   row.className = 'lead';
   const title = document.createElement('b');
@@ -772,6 +800,7 @@ function renderForeclosureWatch() {
  const review = document.getElementById('foreclosureSurplusReview');
  list.replaceChildren();
  review.replaceChildren();
+ const today = new Date().toISOString().slice(0, 10);
  for (const entry of Object.values(foreclosureWatch)) {
   const row = document.createElement('li');
   row.textContent = [entry.county, entry.caseNo, entry.property, entry.stage, entry.saleDate ? 'Sale ' + entry.saleDate : ''].filter(Boolean).join(' · ') + ' ';
@@ -790,9 +819,10 @@ function renderForeclosureWatch() {
   });
   row.append(' ', edit);
   list.append(row);
-  if (entry.stage === 'Sale completed') {
+  const passed = entry.stage === 'Sale scheduled' && entry.saleDate && entry.saleDate < today;
+  if (entry.stage === 'Sale completed' || passed) {
    const item = document.createElement('li');
-   item.textContent = [entry.county, entry.caseNo, entry.property, 'Check court records for remaining surplus'].join(' · ') + ' ';
+   item.textContent = [entry.county, entry.caseNo, entry.property, passed ? 'Sale date ' + entry.saleDate + ' passed · confirm the result, then check for surplus' : 'Check court records for remaining surplus'].join(' · ') + ' ';
    item.append(link.cloneNode(true));
    review.append(item);
   }
@@ -801,6 +831,19 @@ function renderForeclosureWatch() {
   const empty = document.createElement('li');
   empty.textContent = 'No tracked cases yet. Click Track case on a sale below.';
   list.append(empty);
+ }
+ for (const [county, result] of Object.entries(countyDiscovery?.foreclosureSales || {})) {
+  for (const sale of result.records || []) {
+   if (sale.canceled || !sale.saleDate || sale.saleDate >= today || foreclosureWatch[foreclosureCaseKey(county, sale.caseNo)]) continue;
+   const item = document.createElement('li');
+   item.textContent = [county, sale.caseNo, sale.address, sale.judgment ? 'Judgment ' + fmt(sale.judgment) : '', 'Sale date ' + sale.saleDate + ' passed · confirm the result, then check for surplus'].filter(Boolean).join(' · ') + ' ';
+   if (/^https:/.test(sale.source)) {
+    const source = document.createElement('a');
+    source.href = sale.source; source.target = '_blank'; source.rel = 'noopener noreferrer'; source.textContent = 'Clerk sale list';
+    item.append(source);
+   }
+   review.append(item);
+  }
  }
  if (!review.children.length) {
   const empty = document.createElement('li');
@@ -1230,7 +1273,33 @@ async function loadUnclaimedList(){
   output.replaceChildren(heading,note,searchLabel,filter,searchButton,list);
  }catch(error){if(output.namedRequest===request)output.textContent=error.message||'Named lists are unavailable right now.';}
 }
+async function loadSurplusNames(){
+ if(cloudSession&&!privateLists){try{await cloudRefresh();privateLists ||= await openPrivateLists();}catch{}}
+ showCountyDiscovery();
+}
+async function findSurplusOwner(button){
+ const out=button.nextElementSibling;
+ const {county,parcel,owner}=button.dataset;
+ button.disabled=true;
+ out.textContent='Searching property records…';
+ try{
+  const result=await psOwnerLookup(county,parcel,owner);
+  const rows=[];
+  if(result.parcel)rows.push(['Property record now lists '+result.parcel.owner+' · Mailing: '+(result.parcel.mail||'none listed')+'. After a tax-deed sale this is often the new buyer.',result.parcel.source]);
+  for(const p of result.matches)rows.push(['Owner-name match: '+p.owner+' · Property: '+p.address+(p.city?', '+p.city:'')+' · Mailing: '+(p.mail||'none listed'),p.source]);
+  if(!rows.length)rows.push([result.supported?'No property records found for this parcel or owner name.':'Owner lookup is not available for this county yet.']);
+  rows.push(['Phone numbers and emails need a skip-tracing service. Confirm identity before contacting anyone.']);
+  out.replaceChildren(...rows.map(([text,href])=>{
+   const line=document.createElement('div');
+   line.textContent=text+' ';
+   if(href&&/^https:/.test(href)){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Record';line.append(a);}
+   return line;
+  }));
+ }catch(error){out.textContent=error.message||'Property records are unavailable right now.';}
+ finally{button.disabled=false;}
+}
 async function loadNamedReport(kind){
+ if(kind==='surplus')return loadSurplusNames();
  const surplusReport=kind==='surplus';
  const countyField=document.getElementById(surplusReport?'discoveryCounty':'countyFundsBrowse');
  const output=document.getElementById(surplusReport?'surplusNamedReport':'unclaimedNamedReport');
