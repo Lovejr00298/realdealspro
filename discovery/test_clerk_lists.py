@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from datetime import date
-from clerk_lists import merge_sale_history, parse_bay_sales, parse_manatee_unclaimed, parse_osceola_sales, parse_volusia_unclaimed
+from clerk_lists import merge_sale_history, parse_bay_sales, parse_charleston_sales, parse_nc_trustee_sales, parse_volusia_sales, parse_manatee_unclaimed, parse_osceola_sales, parse_volusia_unclaimed
 from publish_private import seal
 from court_filings import parse_civil, parse_probate
 
@@ -27,6 +27,31 @@ class ClerkListTests(unittest.TestCase):
         self.assertEqual([(s["caseNo"], s.get("canceled", False)) for s in sales],
                          [("25000825CA", False), ("25001126CA", True), ("25001400CA", False)])
         self.assertEqual((sales[0]["judgment"], sales[1]["address"], sales[2]["address"]), (118392.32, "", "123 MAIN ST PANAMA CITY"))
+
+    def test_volusia_sales_keep_plaintiff_and_flag_canceled(self):
+        page = ('<span id="x_dobLabel">12/01/2026 - 11:00 a.m.</span><a id="r_link1" href="#">2026 10938 CIDL  </a>'
+                '<span id="r_label1">LAKEVIEW LOAN SERVICING LLC v. SHAWN DEMMITT, ET AL </span>'
+                '<a id="s_link1" href="#">2026 11241 CICI</a><span id="s_label1">Cancelled: NEWREZ LLC v. VALERIE A SMITH</span>')
+        first, second = parse_volusia_sales(page)
+        self.assertEqual((first["caseNo"], first["saleDate"], first["plaintiff"]), ("2026 10938 CIDL", "2026-12-01", "LAKEVIEW LOAN SERVICING LLC"))
+        self.assertNotIn("DEMMITT", json.dumps(first))
+        self.assertTrue(second["canceled"])
+        self.assertEqual(second["plaintiff"], "NEWREZ LLC")
+
+    def test_charleston_sales_drop_defendant(self):
+        page = ('<tr><td>Date of Sale</td></tr><tr><td><p>12-01-26</p><p>23-01476</p></td><td>Bank of New York Mellon</td><td>Vivien M. Linton</td>'
+                '<td>2830000082<br>662 Main Road</td><td>$329,093.36</td><td>1 st</td><td>Brian P. Yoho</td><td>Johns Island</td></tr>')
+        [sale] = parse_charleston_sales(page)
+        self.assertEqual(sale["saleDate"], "2026-12-01")
+        self.assertEqual(sale["address"], "662 Main Road, Johns Island, SC")
+        self.assertEqual(sale["judgment"], 329093.36)
+        self.assertNotIn("Linton", json.dumps(sale))
+
+    def test_nc_trustee_sales(self):
+        page = ('<tr><td>COUNTY</td><td>FILE NO.</td></tr><tr><td>Wake</td><td>26SP002141-910</td><td>903 Phillip Street, Garner, NC 27529</td>'
+                '<td>12/21/2026 11:00 A.M.</td><td>64436</td><td>$37,300.00</td><td></td></tr>')
+        [sale] = parse_nc_trustee_sales(page)
+        self.assertEqual((sale["location"], sale["saleDate"], sale["bid"]), ("Wake County", "2026-12-21", 37300.0))
 
     def test_sale_history_keeps_passed_sales(self):
         previous = {"Bay": {"status": "ok", "records": [

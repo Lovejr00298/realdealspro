@@ -69,7 +69,11 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <label><input style="width:auto" type="checkbox" name="noHomestead"> No homestead exemption (likely non-owner occupied)</label>
 <label><input style="width:auto" type="checkbox" name="estate"> Estate, trust, or heirs</label>
 <label><input style="width:auto" type="checkbox" name="corporate"> Company owner (LLC, Inc)</label>
-<label><input style="width:auto" type="checkbox" name="longTerm"> Owned 15+ years</label>
+</fieldset>
+<fieldset class="psChecks"><legend>Equity finder</legend>
+<p class="small">Estimated from the last sale price and year, assuming an 80% 30-year loan at that year's average rate. Cash buys, refinances and second loans aren't known, so confirm before making an offer.</p>
+<div class="row"><label>Years owned <select name="ownedYears"><option value="">Any</option><option value="lt5">Under 5 (recent buyers)</option><option value="5">5+</option><option value="10">10+</option><option value="15">15+</option><option value="20">20+</option></select></label>
+<label>Min est. equity % <input name="minEquity" type="number" min="0" max="100" placeholder="e.g. 40"></label></div>
 </fieldset>
 <button class="btn" type="submit">Search properties</button>
 </form>
@@ -199,8 +203,16 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <p id="countyFundsStatus" role="status"></p>
 <ul id="countyFundsList"></ul>
 </section>
-<section id="view-preforeclosure" class="panel hidden"><h2>Pre-foreclosures</h2><div id="filings-preforeclosure" role="status"></div></section>
-<section id="view-probate" class="panel hidden"><h2>Probate leads</h2><div id="filings-probate" role="status"></div></section>
+<section id="view-preforeclosure" class="panel hidden"><h2>Pre-foreclosures</h2><div id="filings-preforeclosure" role="status"></div><details><summary>Other counties: search official notices</summary><p class="small">Counties without a list the app can read publish foreclosure sales and probate notices on these official sites.</p><ul class="small">
+<li>Florida: <a href="https://floridapublicnotices.com/" target="_blank" rel="noopener noreferrer">Florida Public Notices</a></li>
+<li>Georgia: <a href="https://www.georgiapublicnotice.com/" target="_blank" rel="noopener noreferrer">Georgia Public Notice</a> · <a href="https://researchga.tylerhost.net/" target="_blank" rel="noopener noreferrer">re:SearchGA court records</a></li>
+<li>North Carolina: <a href="https://www.ncnotices.com/" target="_blank" rel="noopener noreferrer">NC Notices</a> · <a href="https://portal-nc.tylertech.cloud/Portal/" target="_blank" rel="noopener noreferrer">NC eCourts case search</a></li>
+<li>South Carolina: <a href="https://www.scpublicnotices.com/" target="_blank" rel="noopener noreferrer">SC Public Notices</a> · <a href="https://publicindex.sccourts.org/" target="_blank" rel="noopener noreferrer">SC Public Index (Master-in-Equity sale rosters)</a></li></ul></details></section>
+<section id="view-probate" class="panel hidden"><h2>Probate leads</h2><div id="filings-probate" role="status"></div><details><summary>Other counties: search official notices</summary><p class="small">Counties without a list the app can read publish foreclosure sales and probate notices on these official sites.</p><ul class="small">
+<li>Florida: <a href="https://floridapublicnotices.com/" target="_blank" rel="noopener noreferrer">Florida Public Notices</a></li>
+<li>Georgia: <a href="https://www.georgiapublicnotice.com/" target="_blank" rel="noopener noreferrer">Georgia Public Notice</a> · <a href="https://researchga.tylerhost.net/" target="_blank" rel="noopener noreferrer">re:SearchGA court records</a></li>
+<li>North Carolina: <a href="https://www.ncnotices.com/" target="_blank" rel="noopener noreferrer">NC Notices</a> · <a href="https://portal-nc.tylertech.cloud/Portal/" target="_blank" rel="noopener noreferrer">NC eCourts case search</a></li>
+<li>South Carolina: <a href="https://www.scpublicnotices.com/" target="_blank" rel="noopener noreferrer">SC Public Notices</a> · <a href="https://publicindex.sccourts.org/" target="_blank" rel="noopener noreferrer">SC Public Index (Master-in-Equity sale rosters)</a></li></ul></details></section>
 <section id="view-foreclosure" class="panel hidden">
 <h2>Foreclosure Watch</h2>
 <h3>Your tracked cases</h3><p class="small">Cases you track appear here. Mark a sale completed after checking the court record and it moves to Sale Surplus for review.</p><p id="foreclosureWatchStatus" role="status"></p><ul id="foreclosureWatchList"></ul><details><summary>Add a case by hand</summary><form id="foreclosureWatchForm">
@@ -210,7 +222,11 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <label>Court record URL <input type="url" name="source" required></label>
 <label>Scheduled sale date <input type="date" name="saleDate"></label><label>Status <select name="stage"><option>Filed</option><option>Sale scheduled</option><option>Sale completed</option><option>Sale canceled</option></select></label>
 <button type="submit">Save case status</button>
-</form></details><h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Click <b>Track case</b> to add a sale to Your tracked cases above. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList" style="max-height:60vh;overflow:auto"></div>
+</form></details><h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Click <b>Track case</b> to add a sale to Your tracked cases above. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList" style="max-height:60vh;overflow:auto"></div><details><summary>Other counties: search official notices</summary><p class="small">Counties without a list the app can read publish foreclosure sales and probate notices on these official sites.</p><ul class="small">
+<li>Florida: <a href="https://floridapublicnotices.com/" target="_blank" rel="noopener noreferrer">Florida Public Notices</a></li>
+<li>Georgia: <a href="https://www.georgiapublicnotice.com/" target="_blank" rel="noopener noreferrer">Georgia Public Notice</a> · <a href="https://researchga.tylerhost.net/" target="_blank" rel="noopener noreferrer">re:SearchGA court records</a></li>
+<li>North Carolina: <a href="https://www.ncnotices.com/" target="_blank" rel="noopener noreferrer">NC Notices</a> · <a href="https://portal-nc.tylertech.cloud/Portal/" target="_blank" rel="noopener noreferrer">NC eCourts case search</a></li>
+<li>South Carolina: <a href="https://www.scpublicnotices.com/" target="_blank" rel="noopener noreferrer">SC Public Notices</a> · <a href="https://publicindex.sccourts.org/" target="_blank" rel="noopener noreferrer">SC Public Index (Master-in-Equity sale rosters)</a></li></ul></details>
 <button type="button" onclick="go('surplus')">Go to Sale Surplus</button>
 </section>
 <div id="view-surplus" class="panel hidden"><h2>💰 Surplus cases</h2><details><summary>Official claim forms</summary><ul><li><a href="https://www.duvalclerk.gov/getmedia/3884dee5-d53c-4a4c-86a3-6040a5aed6c6/foreclosure-surplus-claim.pdf">Duval mortgage foreclosure owner claim</a></li><li><a href="https://www.duvalclerk.gov/getmedia/9a03a97e-6970-4343-a91b-82f9cde23a5b/Claim-to-Receive-Surplus-Funds.pdf">Duval tax-deed surplus claim</a></li><li><a href="https://osceolaclerk.com/wp-content/uploads/Surplus-Claim-Fill-in-Form-Rev-1.22.2020-JR.pdf">Osceola tax-deed surplus claim</a></li></ul><p>Confirm the current form with the clerk for your case.</p></details><h3>Foreclosure sales to review</h3><ul id="foreclosureSurplusReview"></ul><details>
@@ -850,7 +866,7 @@ function renderForeclosureSales() {
   title.textContent = sale.saleDate + ' · ' + sale.caseNo;
   const detail = document.createElement('div');
   detail.className = 'small';
-  detail.textContent = [sale.plaintiff, sale.judgment ? 'Judgment ' + fmt(sale.judgment) : '', sale.address, sale.saleDate < today ? 'Sale date passed: check for surplus' : ''].filter(Boolean).join(' · ');
+  detail.textContent = [sale.location, sale.plaintiff, sale.judgment ? 'Judgment ' + fmt(sale.judgment) : '', sale.bid ? 'Bid ' + fmt(sale.bid) : '', sale.lien ? 'Lien ' + sale.lien : '', sale.address, sale.saleDate < today ? 'Sale date passed: check for surplus' : ''].filter(Boolean).join(' · ');
   row.append(title, detail);
   if (new URL(sale.source).protocol === 'https:') {
    const link = document.createElement('a');
