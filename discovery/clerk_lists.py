@@ -1,5 +1,6 @@
 """Read official clerk foreclosure sale lists and unclaimed-money notices."""
 from datetime import datetime, timedelta
+import html
 from io import BytesIO
 import re
 import sys
@@ -12,6 +13,9 @@ OSCEOLA_SALES = "https://courts.osceolaclerk.com/reports/CivilMortgageForeclosur
 BAY_SALES = "https://apps.baycoclerk.com/Downloads/ForeclosureSales.pdf"
 VOLUSIA_UNCLAIMED = "https://www.clerk.org/pdf/notices/2026-Unclaimed-Payments-Notice.pdf"
 MANATEE_UNCLAIMED = "https://www.manateeclerk.com/media/2793/unclaimed-funds-2026.pdf"
+VOLUSIA_SALES = "https://app02.clerk.org/cm_sales/"
+CHARLESTON_SALES = "https://www.charlestoncounty.gov/foreclosure/runninglist.html"
+NC_TRUSTEE_SALES = "https://fletchertydings.com/foreclosure-sales/"
 
 
 def layout_text(data):
@@ -45,6 +49,81 @@ def parse_bay_sales(text, source=BAY_SALES):
     return sales
 
 
+def table_rows(page):
+    """Each <tr> as a list of cell texts, with inner tags turned into single spaces."""
+    cell = lambda raw: " ".join(html.unescape(re.sub(r"<[^>]+>", " ", raw)).split())
+    return [[cell(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)]
+            for row in re.findall(r"<tr[^>]*>(.*?)</tr>", page, re.S | re.I)]
+
+
+def plaintiff_of(style):
+    return " ".join(style.split(" v. ")[0].split())
+
+
+def parse_volusia_sales(page, source=VOLUSIA_SALES):
+    sales = []
+    for block in re.split(r'(?=<span id="[^"]*dobLabel")', page)[1:]:
+        day = re.search(r"dobLabel[^>]*>(\d{2}/\d{2}/\d{4})", block)
+        if not day:
+            continue
+        for case, style in re.findall(r'<a[^>]*link1"[^>]*>([^<]+)</a>.*?label1">([^<]*)</span>', block, re.S):
+            style = " ".join(html.unescape(style).split())
+            record = {"county": "Volusia", "caseNo": " ".join(case.split()), "saleDate": iso(day[1], "%m/%d/%Y"), "source": source}
+            if style.startswith("Cancelled:"):
+                record["canceled"] = True
+                style = style[len("Cancelled:"):]
+            record["plaintiff"] = plaintiff_of(style)
+            sales.append(record)
+    return sales
+
+
+def parse_charleston_sales(page, source=CHARLESTON_SALES):
+    sales = []
+    for cells in table_rows(page):
+        match = len(cells) >= 8 and re.match(r"(\d{2}-\d{2}-\d{2}).*?(\d{2}-\d{5})\s*$", cells[0])
+        if not match:
+            continue
+        address = re.sub(r"^\d{10}\s*", "", cells[3])
+        record = {"county": "Charleston, SC", "caseNo": match[2], "saleDate": iso(match[1], "%m-%d-%y"),
+                  "plaintiff": cells[1], "address": ", ".join(filter(None, [address, cells[7], "SC"])),
+                  "parcelId": cells[3][:10], "lien": cells[5], "source": source}
+        if re.search(r"[\d,]+\.\d{2}", cells[4]):
+            record["judgment"] = money(re.search(r"[\d,]+\.\d{2}", cells[4])[0])
+        sales.append(record)
+    return sales
+
+
+def parse_nc_trustee_sales(page, source=NC_TRUSTEE_SALES):
+    """A North Carolina foreclosure trustee's posted list of its upcoming and open-for-upset-bid sales."""
+    sales = []
+    for cells in table_rows(page):
+        if len(cells) < 6 or not re.fullmatch(r"\d{2}SP\d{6}-\d{3}", cells[1]):
+            continue
+        day = re.match(r"(\d{2}/\d{2}/\d{4})", cells[3])
+        if not day:
+            continue
+        record = {"county": "North Carolina (trustee list)", "location": cells[0].strip() + " County", "caseNo": cells[1], "saleDate": iso(day[1], "%m/%d/%Y"),
+                  "address": cells[2], "parcelId": cells[4], "source": source}
+        bid = re.search(r"[\d,]+\.\d{2}", cells[5])
+        if bid:
+            record["bid"] = money(bid[0])
+        sales.append(record)
+    return sales
+
+
+def volusia_sales_page():
+    """The clerk shows the sale list after a disclaimer postback, so keep the session cookie between requests."""
+    import http.cookiejar
+    import urllib.parse
+    import urllib.request
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    opener.addheaders = [("User-Agent", "Mozilla/5.0 RealDealsPro")]
+    first = opener.open(VOLUSIA_SALES, timeout=60)
+    form = dict(re.findall(r'<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"', first.read().decode("utf-8", "replace")))
+    form.update({"__EVENTTARGET": "ctl00$Content1$button_accept", "__EVENTARGUMENT": ""})
+    return opener.open(first.geturl(), urllib.parse.urlencode(form).encode(), timeout=60).read().decode("utf-8", "replace")
+
+
 def parse_volusia_unclaimed(text, source=VOLUSIA_UNCLAIMED):
     rows = re.findall(r"^\s*(\S.*?)\s{2,}(\S+)\s+(\d{1,2}/\d{1,2}/\d{4})\s+(\S.*?)\s{2,}([\d,]+\.\d{2})\s*$", text, re.M)
     return [{"county": "Volusia", "name": name, "reference": ref, "date": iso(date, "%m/%d/%Y"),
@@ -60,10 +139,14 @@ def parse_manatee_unclaimed(text, source=MANATEE_UNCLAIMED):
 
 
 def foreclosure_sales():
-    return {
+    sources = {
         "Osceola": lambda: parse_osceola_sales(pdf_text(fetch(OSCEOLA_SALES))),
         "Bay": lambda: parse_bay_sales(pdf_text(fetch(BAY_SALES))),
+        "Volusia": lambda: parse_volusia_sales(volusia_sales_page()),
+        "Charleston, SC": lambda: parse_charleston_sales(fetch(CHARLESTON_SALES).decode("utf-8", "replace")),
     }
+    sources["North Carolina (trustee list)"] = lambda: parse_nc_trustee_sales(fetch(NC_TRUSTEE_SALES).decode("utf-8", "replace"))
+    return sources
 
 
 def unclaimed_lists():

@@ -34,6 +34,10 @@ const PS_COUNTY_SOURCES = {
 const PS_ESTATE = ['ESTATE','HEIRS','TRUST','DECEASED'];
 const PS_CORP = [' LLC',' INC',' CORP',' LTD',' LP',' COMPANY'];
 const psSavedKey = 'rdp_saved_searches_v1';
+// Freddie Mac PMMS 30-year fixed annual averages (approximate), used only to estimate a remaining loan balance.
+const PS_RATES = {1990: 10.1, 1991: 9.3, 1992: 8.4, 1993: 7.3, 1994: 8.4, 1995: 7.9, 1996: 7.8, 1997: 7.6, 1998: 6.9, 1999: 7.4, 2000: 8.1, 2001: 7.0, 2002: 6.5,
+  2003: 5.8, 2004: 5.8, 2005: 5.9, 2006: 6.4, 2007: 6.3, 2008: 6.0, 2009: 5.0, 2010: 4.7, 2011: 4.5, 2012: 3.7, 2013: 4.0, 2014: 4.2, 2015: 3.9, 2016: 3.7,
+  2017: 4.0, 2018: 4.5, 2019: 3.9, 2020: 3.1, 2021: 3.0, 2022: 5.3, 2023: 6.8, 2024: 6.7, 2025: 6.6};
 let psResults = [];
 let psMap = null;
 let psMarkers = null;
@@ -56,7 +60,7 @@ function psForm() {
     state: form.get('state'), county: form.get('county'), city: text('city'), zip: text('zip'),
     street: text('street'), owner: text('owner'), type: form.get('type'),
     absentee: form.has('absentee'), outOfState: form.has('outOfState'), noHomestead: form.has('noHomestead'),
-    estate: form.has('estate'), corporate: form.has('corporate'), longTerm: form.has('longTerm'),
+    estate: form.has('estate'), corporate: form.has('corporate'), ownedYears: String(form.get('ownedYears') || ''), minEquity: num('minEquity'),
     minValue: num('minValue'), maxValue: num('maxValue'), maxYear: num('maxYear')
   };
 }
@@ -97,12 +101,37 @@ function psWhere(c) {
     if (c.outOfState) w.push("NOT (mstate = 'NC' OR mcity LIKE '% NC %' OR mcity LIKE '% NC')");
     if (c.estate) w.push(psLikeAny('UPPER(ownname)', PS_ESTATE));
     if (c.corporate) w.push(psLikeAny('UPPER(ownname)', PS_CORP));
-    if (c.longTerm) w.push("saledate <= date '" + (new Date().getFullYear() - 15) + "-01-01'");
+    if (c.ownedYears) w.push('saledate ' + (c.ownedYears === 'lt5' ? '>= ' : '<= ') + "date '" + (new Date().getFullYear() - (c.ownedYears === 'lt5' ? 5 : Number(c.ownedYears))) + "-01-01'");
     if (c.minValue != null) w.push('parval >= ' + c.minValue);
     if (c.maxValue != null) w.push('parval <= ' + c.maxValue);
     if (c.maxYear != null) w.push('structyear > 0 AND structyear <= ' + c.maxYear);
   }
   return w.join(' AND ');
+}
+
+function psOwnedMatch(choice, saleYear) {
+  if (!choice) return true;
+  if (!saleYear) return false;
+  const years = new Date().getFullYear() - saleYear;
+  return choice === 'lt5' ? years < 5 : years >= Number(choice);
+}
+
+// Estimated equity: assume an 80% 30-year loan at the average rate of the purchase year, amortized to today.
+// Cash buyers, refinances and second mortgages are unknown, so this is a rough guide until a paid mortgage data source is connected.
+function psEquity(p) {
+  if (!p.value || !p.saleYear) return null;
+  const now = new Date();
+  const months = (now.getFullYear() - p.saleYear) * 12 + now.getMonth();
+  let balance = 0;
+  if (months < 360) {
+    if (!p.lastSalePrice) return null;
+    const rate = (PS_RATES[p.saleYear] ?? (p.saleYear < 1990 ? 10 : 6.5)) / 1200;
+    const loan = p.lastSalePrice * 0.8;
+    const growth = (1 + rate) ** 360;
+    balance = Math.max(0, loan * (growth - (1 + rate) ** Math.max(0, months)) / (growth - 1));
+  }
+  const amount = Math.round(p.value - balance);
+  return {amount, pct: Math.round(amount / p.value * 100), years: now.getFullYear() - p.saleYear};
 }
 
 function psMatchFL(c, p) {
@@ -111,7 +140,8 @@ function psMatchFL(c, p) {
     && (!c.street || p.address.toUpperCase().includes(c.street))
     && (!c.type || (p.state === 'FL' ? !PS_FL_TYPES[c.type] || PS_FL_TYPES[c.type](p.useCode || '') : c.type === 'vacant' && p.vacant))
     && (!c.absentee || p.absentee) && (!c.outOfState || p.outOfState) && (!c.noHomestead || p.noHomestead)
-    && (!c.longTerm || p.longTerm)
+    && psOwnedMatch(c.ownedYears, p.saleYear)
+    && (c.minEquity == null || (psEquity(p)?.pct ?? -1) >= c.minEquity)
     && (!c.estate || PS_ESTATE.some(word => owner.includes(word)))
     && (!c.corporate || PS_CORP.some(word => owner.includes(word)))
     && (c.minValue == null || (p.value || 0) >= c.minValue)
@@ -214,7 +244,7 @@ function psNormalizeCounty(state, county, s, f) {
     absentee: Boolean(address && mailStreet && [...words(mailStreet)].some(word => !site.has(word))),
     outOfState: Boolean(mailState && mailState !== state),
     noHomestead: s.homestead ? get(s.homestead) !== 'Y' : false,
-    vacant: num(s.building) === 0, longTerm: Boolean(saleYear && saleYear <= new Date().getFullYear() - 15)
+    vacant: num(s.building) === 0, saleYear: saleYear || null
   };
   p.source = s.url + '?' + new URLSearchParams({f: 'json', where: s.id + " = '" + psQuote(get(s.id)) + "'", outFields: '*', returnGeometry: 'false'});
   return p;
@@ -283,7 +313,9 @@ function psFlags(p) {
   if (p.noHomestead) flags.push(['No homestead exemption', 10]);
   if (PS_ESTATE.some(word => owner.includes(word))) flags.push(['Estate / trust / heirs', 25]);
   if (p.vacant) flags.push(['Vacant land', 10]);
-  if (p.longTerm) flags.push(['Owned 15+ years', 15]);
+  const equity = psEquity(p);
+  if (equity?.pct >= 50) flags.push(['Est. equity ' + equity.pct + '%', 15]);
+  else if (!equity && p.saleYear && new Date().getFullYear() - p.saleYear >= 15) flags.push(['Owned 15+ years', 15]);
   if (PS_CORP.some(word => owner.includes(word))) flags.push(['Company owner', 0]);
   return flags;
 }
@@ -303,7 +335,7 @@ function psNormalizeFL(f) {
     absentee: Boolean(a.OWN_ADDR1 && a.PHY_ADDR1 && a.OWN_ADDR1.trim() !== a.PHY_ADDR1.trim()),
     outOfState: Boolean(a.OWN_STATE && a.OWN_STATE !== 'FL'),
     noHomestead: !a.JV_HMSTD, vacant: ['000', '010', '040', '070'].includes(a.DOR_UC),
-    longTerm: Boolean(a.SALE_YR1 && a.SALE_YR1 <= new Date().getFullYear() - 15)
+    saleYear: a.SALE_YR1 || null
   };
   p.source = psUrl('FL', {where: "PARCEL_ID = '" + psQuote(a.PARCEL_ID) + "' AND CO_NO = " + a.CO_NO, outFields: '*', returnGeometry: 'false'});
   return p;
@@ -323,7 +355,7 @@ function psNormalizeNC(f) {
     lat: g.y, lng: g.x,
     absentee: Boolean(a.mailadd && a.siteadd && a.mailadd.trim() !== a.siteadd.trim()),
     outOfState: Boolean(mailState && mailState !== 'NC'), noHomestead: false,
-    vacant: a.improvval === 0, longTerm: Boolean(sold && sold.getFullYear() <= new Date().getFullYear() - 15)
+    vacant: a.improvval === 0, saleYear: sold ? sold.getUTCFullYear() : null
   };
   p.source = psUrl('NC', {where: "cntyname = '" + psQuote(a.cntyname) + "' AND parno = '" + psQuote(a.parno) + "'", outFields: '*', returnGeometry: 'false'});
   return p;
@@ -386,6 +418,8 @@ function psCard(p, index) {
   const flags = psFlags(p).map(([label]) => `<span class="pill warm">${escapeHtml(label)}</span>`).join(' ');
   const facts = [p.city, p.zip, p.use, p.value ? 'Value ' + fmt(p.value) : '', p.sqft ? p.sqft.toLocaleString() + ' sq ft' : '',
     p.yearBuilt ? 'Built ' + p.yearBuilt : '', p.lastSale ? 'Last sale ' + p.lastSale + (p.lastSalePrice ? ' for ' + fmt(p.lastSalePrice) : '') : ''].filter(Boolean);
+  const equity = psEquity(p);
+  if (equity) facts.push('Est. equity ' + fmt(equity.amount) + ' (' + equity.pct + '%, owned ' + equity.years + ' yrs)');
   return `<article class="lead" id="psCard${index}"><strong>${escapeHtml(p.address)}</strong> <span class="pill ${p.score >= 40 ? 'hot' : p.score >= 20 ? 'warm' : 'cold'}">Opportunity ${p.score}/100</span>
   <div class="small">${escapeHtml(facts.join(' · '))}</div>
   <div class="small">Owner: ${escapeHtml(p.owner)}${p.mail ? ' · Mailing: ' + escapeHtml(p.mail) : ''}</div>
@@ -443,7 +477,7 @@ function psLeadFrom(p) {
   const lead = {
     a: p.address, c: p.county, city: p.city, state: p.state, parcelId: p.parcelId,
     propertyType: p.vacant ? 'Vacant Land' : p.useCode === '001' ? 'House' : '',
-    owner: p.owner, mail: p.mail, equity: null, vault: 0,
+    owner: p.owner, mail: p.mail, equity: psEquity(p)?.pct ?? null, vault: 0,
     absentee: +(p.absentee || p.outOfState), vacant: 0, tax: 0, fore: 0,
     estimatedValue: p.value, source: p.source,
     notes: ['Property Search', p.use, ...psFlags(p).map(([label]) => label), p.value ? 'Assessed value ' + fmt(p.value) : ''].filter(Boolean).join(' · ')
@@ -573,7 +607,9 @@ function psRunSaved(index) {
   const form = document.getElementById('psForm');
   form.state.value = saved.criteria.state;
   psCounties();
-  for (const [key, value] of Object.entries(saved.criteria)) {
+  const criteria = {...saved.criteria};
+  if (criteria.longTerm && !criteria.ownedYears) criteria.ownedYears = '15';
+  for (const [key, value] of Object.entries(criteria)) {
     const field = form.elements[key];
     if (!field || key === 'state') continue;
     if (field.type === 'checkbox') field.checked = Boolean(value); else field.value = value ?? '';
