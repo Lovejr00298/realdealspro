@@ -199,6 +199,8 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 <p id="countyFundsStatus" role="status"></p>
 <ul id="countyFundsList"></ul>
 </section>
+<section id="view-preforeclosure" class="panel hidden"><h2>Pre-foreclosures</h2><div id="filings-preforeclosure" role="status"></div></section>
+<section id="view-probate" class="panel hidden"><h2>Probate leads</h2><div id="filings-probate" role="status"></div></section>
 <section id="view-foreclosure" class="panel hidden">
 <h2>Foreclosure Watch</h2>
 <h3>Your tracked cases</h3><p class="small">Cases you track appear here. Mark a sale completed after checking the court record and it moves to Sale Surplus for review.</p><p id="foreclosureWatchStatus" role="status"></p><ul id="foreclosureWatchList"></ul><details><summary>Add a case by hand</summary><form id="foreclosureWatchForm">
@@ -347,7 +349,7 @@ function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));local
 let tab='start';
 const NAV=[['Start here',[['start','Start here']]],
  ['Find money',[['surplus','Surplus cases'],['foreclosure','Upcoming foreclosures'],['county-funds','Unclaimed funds']]],
- ['Find deals',[['prop-search','Property search'],['review','Ranked deals'],['leads','Saved leads'],['vault','Hot 80+'],['kanban','Board'],['dashboard','Daily review'],['parcel-search','Polk parcels']]],
+ ['Find deals',[['prop-search','Property search'],['preforeclosure','Pre-foreclosures'],['probate','Probate leads'],['review','Ranked deals'],['leads','Saved leads'],['vault','Hot 80+'],['kanban','Board'],['dashboard','Daily review'],['parcel-search','Polk parcels']]],
  ['Buyers & outreach',[['investors','Buyers'],['outreach','Campaigns'],['scripts','Call scripts']]],
  ['Documents',[['contracts','Documents & e-sign']]],
  ['Settings',[['settings','Settings']]]];
@@ -361,7 +363,9 @@ const HELP={
  vault:'Your hottest leads, scored 80 or higher.',
  kanban:'Your saved leads arranged by stage.',
  dashboard:'Daily to-dos for tracked foreclosure cases, plus processing for records saved on this device.',
- 'parcel-search':'Look up Polk County parcels by owner, address or parcel number.',
+ 'parcel-search':'Polk County only: look up parcels by owner, address or parcel number.',
+ preforeclosure:'New foreclosure cases filed with the Hillsborough clerk in the last 30 days, before any sale is scheduled. Save the ones you like as leads or get the owner\'s phone and email.',
+ probate:'New Hillsborough probate estates from the last 30 days: who died, their last address and the family or attorney handling the estate.',
  investors:"People you sell deals to. Add each buyer's buy box and the app matches them to your approved deals.",
  outreach:'Email, text and mail campaigns. Build a campaign, approve it, then send. Opt-outs, quiet hours and daily limits apply automatically.',
  scripts:'Talk tracks for calling owners and buyers.',
@@ -389,7 +393,7 @@ function renderStart(){
   [investors.some(investor=>!/test/i.test(investor.notes||'')),'Optional: add real buyers, approve your best deals and send them out.','investors','Buyers']];
  box.innerHTML=steps.map(([done,text,view,label])=>`<li class="${done?'done':''}">${done?'✓ ':''}${text} <button type="button" onclick="go('${view}')">Open ${label}</button></li>`).join('');
 }
-function go(t){tab=t;if((t==='contracts'||t==='surplus')&&typeof ddLoadSignatures==='function')ddLoadSignatures();showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='foreclosure')loadForeclosureSales();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadUnclaimedList();if(t==='prop-search')propSearchShown();if(t==='review')ddRenderReview();if(t==='outreach')outreachShown()}
+function go(t){tab=t;if((t==='contracts'||t==='surplus')&&typeof ddLoadSignatures==='function')ddLoadSignatures();showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='foreclosure')loadForeclosureSales();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadUnclaimedList();if(t==='prop-search')propSearchShown();if(t==='review')ddRenderReview();if(t==='outreach')outreachShown();if(t==='preforeclosure'||t==='probate')loadFilings(t)}
 function runAutomation(){
  const county=document.getElementById('county').value;let found=0,hot=0,vaulted=0;
  leads.forEach(l=>{if(l.c!==county)return;found++;if(document.getElementById('autoScore').checked){l.score=scoreOf(l);l.status=labelOf(l.score)}if(scoreOf(l)>=80){hot++;if(document.getElementById('autoVault').checked&&!l.vault){l.vault=1;vaulted++}}});
@@ -1355,6 +1359,85 @@ async function loadUnclaimedList(){
   renderRows();
   output.replaceChildren(heading,note,searchLabel,filter,searchButton,list);
  }catch(error){if(output.namedRequest===request)output.textContent=error.message||'Named lists are unavailable right now.';}
+}
+const FILING_LABELS={preforeclosure:'pre-foreclosure filings',probate:'probate estates'};
+const filingAddress=a=>a?[a.street,a.city,a.state+' '+a.zip].join(', '):'';
+function saveFilingLead(kind,row,button){
+ const a=row.property;
+ if(leads.some(l=>l.a.trim().toLowerCase()===a.street.toLowerCase())){button.textContent='Already saved';button.disabled=true;return;}
+ const owner=kind==='probate'?'Estate of '+row.decedent:(row.owners[0]||'Unknown');
+ const notes=kind==='probate'?['Probate '+row.caseNo,row.type,row.died?'Died '+row.died:'',row.contacts.map(c=>c.role+': '+c.name).join('; '),row.attorney?'Attorney: '+row.attorney:''].filter(Boolean).join(' · ')
+  :['Pre-foreclosure '+row.caseNo,row.kind,row.homestead?'Homestead':'','Plaintiff: '+row.plaintiff,'Filed '+row.filed].filter(Boolean).join(' · ');
+ const lead={a:a.street,c:row.county,city:a.city,state:a.state,propertyType:'',owner,mail:filingAddress(a),equity:null,vault:0,absentee:0,vacant:0,tax:0,fore:kind==='preforeclosure'?1:0,source:row.source,caseNo:row.caseNo,notes};
+ lead.score=scoreOf(lead);lead.status=labelOf(lead.score);
+ leads.unshift(lead);
+ try{save()}catch{leads.shift();button.textContent='Could not save';return;}
+ render();button.textContent='Saved to leads';button.disabled=true;
+}
+function filingSkipButton(owner,address){
+ const get=Object.assign(document.createElement('button'),{type:'button',className:'btn ghost',textContent:'Get phone and email'});
+ get.dataset.owner=owner;get.dataset.mail=[address.street,address.city,address.state,address.zip].join(', ');
+ get.addEventListener('click',()=>skipTraceOwner(get));
+ return get;
+}
+function filingItem(kind,row){
+ const item=document.createElement('li');
+ const text=kind==='probate'
+  ?[row.filed,row.caseNo,row.type,'Decedent: '+row.decedent+(row.died?' (died '+row.died+')':''),'Last address: '+(filingAddress(row.property)||'not listed'),
+    row.contacts.length?'Contacts: '+row.contacts.map(c=>c.role+' '+c.name+(c.address?' ('+c.address.city+', '+c.address.state+')':'')).join('; '):'',row.attorney?'Attorney: '+row.attorney:'']
+  :[row.filed,row.caseNo,row.kind+(row.homestead?' (homestead)':''),row.estate?'Estate or heirs named':'','Owner: '+(row.owners.join(', ')||'not listed'),'Property: '+(filingAddress(row.property)||'not listed'),'Plaintiff: '+row.plaintiff];
+ item.append(text.filter(Boolean).join(' · ')+' ');
+ if(row.property){
+  const save=Object.assign(document.createElement('button'),{type:'button',className:'btn',textContent:'Save as lead'});
+  if(leads.some(l=>l.a.trim().toLowerCase()===row.property.street.toLowerCase())){save.textContent='Already saved';save.disabled=true;}
+  save.addEventListener('click',()=>saveFilingLead(kind,row,save));
+  item.append(save,' ');
+ }
+ const contact=kind==='probate'?row.contacts.find(c=>c.address&&c.role!=='Beneficiary')||row.contacts.find(c=>c.address):row.owners[0]&&row.property&&{name:row.owners[0],address:row.property};
+ if(contact)item.append(filingSkipButton(contact.name,contact.address));
+ return item;
+}
+async function loadFilings(kind){
+ const output=document.getElementById('filings-'+kind);
+ const request=Symbol();
+ output.namedRequest=request;
+ if(!cloudSession){
+  const signIn=Object.assign(document.createElement('button'),{type:'button',className:'btn',textContent:'Go to Settings to sign in'});
+  signIn.addEventListener('click',()=>go('settings'));
+  output.replaceChildren('Sign in under Settings to see new '+FILING_LABELS[kind]+'. Names are locked to your account. ',signIn);return;}
+ output.textContent='Loading '+FILING_LABELS[kind]+'…';
+ try{
+  await cloudRefresh();
+  privateLists ||= await openPrivateLists();
+  if(output.namedRequest!==request)return;
+  const result=privateLists.filings?.Hillsborough?.[kind];
+  if(!result){output.textContent='These filings appear after the next county scan (weekday mornings).';return;}
+  if(result.status!=='ok'){output.textContent='The Hillsborough clerk feed was unavailable on the last scan. It will retry on the next weekday scan.';return;}
+  const records=result.records;
+  const heading=document.createElement('h3');
+  heading.textContent='Hillsborough · '+records.length+' new '+FILING_LABELS[kind]+' in the last 30 days';
+  const note=document.createElement('p');note.className='small';
+  note.textContent=(kind==='probate'
+   ?'From the clerk\'s daily probate filings. Confirm the estate owns the property and who has authority to sell before making an offer, and contact families respectfully. '
+   :'From the clerk\'s daily civil filings. A case was filed; no sale is scheduled yet. Florida\'s foreclosure-rescue law limits what you can offer homeowners in foreclosure, so get legal advice before contacting them. ');
+  const search=Object.assign(document.createElement('a'),{href:result.caseSearch,target:'_blank',rel:'noopener noreferrer',textContent:'Open clerk case search'});
+  note.append(search);
+  const filter=Object.assign(document.createElement('input'),{type:'search',placeholder:'Type a name, street, city or case number'});
+  filter.setAttribute('aria-label','Search filings');
+  const type=document.createElement('select');type.setAttribute('aria-label','Filing type');
+  const types=[...new Set(records.map(r=>kind==='probate'?r.type:r.kind))].sort();
+  type.replaceChildren(new Option('All types',''),...types.map(t=>new Option(t,t)));
+  const button=Object.assign(document.createElement('button'),{type:'button',className:'btn',textContent:'Search'});
+  const list=document.createElement('ul');
+  const draw=()=>{
+   const query=filter.value.trim().toLowerCase();
+   const rows=records.filter(r=>(!type.value||(kind==='probate'?r.type:r.kind)===type.value)&&(!query||JSON.stringify(r).toLowerCase().includes(query))).slice(0,300);
+   list.replaceChildren(...(rows.length?rows.map(r=>filingItem(kind,r)):[Object.assign(document.createElement('li'),{textContent:'No matching filings.'})]));
+  };
+  filter.addEventListener('input',draw);type.addEventListener('change',draw);button.addEventListener('click',draw);
+  draw();
+  output.replaceChildren(heading,note,filter,' ',type,' ',button,list);
+ }catch(error){if(output.namedRequest===request)output.textContent=error.message||'Filings are unavailable right now.';}
 }
 async function loadSurplusNames(){
  if(cloudSession&&!privateLists){try{await cloudRefresh();privateLists ||= await openPrivateLists();}catch{}}

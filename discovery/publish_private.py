@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from clerk_lists import gather, unclaimed_lists
+from court_filings import hillsborough_filings
 from georgia import fetch
 from marion_private import names_by_sale
 
@@ -67,5 +68,5 @@ def all_surplus_names():
 
 if __name__ == "__main__":
     payload = {"fetchedAt": datetime.now(timezone.utc).isoformat(), "unclaimed": gather(unclaimed_lists()),
-               "surplusNames": all_surplus_names()}
+               "surplusNames": all_surplus_names(), "filings": {"Hillsborough": hillsborough_filings()}}
     print(json.dumps(seal(payload, PUBLIC_KEY.read_bytes())))
