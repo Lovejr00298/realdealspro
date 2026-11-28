@@ -194,17 +194,14 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 </section>
 <section id="view-foreclosure" class="panel hidden">
 <h2>Foreclosure Watch</h2>
-<h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList"></div><h3>Your tracked cases</h3><p>Track cases by county and court case number. Mark a sale completed after checking the court record.</p>
-<form id="foreclosureWatchForm">
+<h3>Your tracked cases</h3><p class="small">Cases you track appear here. Mark a sale completed after checking the court record and it moves to Sale Surplus for review.</p><p id="foreclosureWatchStatus" role="status"></p><ul id="foreclosureWatchList"></ul><details><summary>Add a case by hand</summary><form id="foreclosureWatchForm">
 <label>County <input name="county" required maxlength="50"></label>
 <label>Court case number <input name="caseNo" required maxlength="80"></label>
 <label>Property address or parcel ID <input name="property" required maxlength="160"></label>
 <label>Court record URL <input type="url" name="source" required></label>
 <label>Scheduled sale date <input type="date" name="saleDate"></label><label>Status <select name="stage"><option>Filed</option><option>Sale scheduled</option><option>Sale completed</option><option>Sale canceled</option></select></label>
 <button type="submit">Save case status</button>
-</form>
-<p id="foreclosureWatchStatus" role="status"></p>
-<ul id="foreclosureWatchList"></ul>
+</form></details><h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Click <b>Track case</b> to add a sale to Your tracked cases above. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList" style="max-height:60vh;overflow:auto"></div>
 <button type="button" onclick="go('surplus')">Go to Sale Surplus</button>
 </section>
 <div id="view-surplus" class="panel hidden"><h2>💰 Sale Surplus — Florida</h2><details><summary>Official claim forms</summary><ul><li><a href="https://www.duvalclerk.gov/getmedia/3884dee5-d53c-4a4c-86a3-6040a5aed6c6/foreclosure-surplus-claim.pdf">Duval mortgage foreclosure owner claim</a></li><li><a href="https://www.duvalclerk.gov/getmedia/9a03a97e-6970-4343-a91b-82f9cde23a5b/Claim-to-Receive-Surplus-Funds.pdf">Duval tax-deed surplus claim</a></li><li><a href="https://osceolaclerk.com/wp-content/uploads/Surplus-Claim-Fill-in-Form-Rev-1.22.2020-JR.pdf">Osceola tax-deed surplus claim</a></li></ul><p>Confirm the current form with the clerk for your case.</p></details><h3>Foreclosure sales to review</h3><ul id="foreclosureSurplusReview"></ul><details>
@@ -612,6 +609,18 @@ for(const id of ['countyFundsBrowse','discoveryCounty']){
   if(option.value)select.append(option.cloneNode(true));
  }
 }
+const UNCLAIMED_LIST_COUNTIES=['Volusia','Manatee','Marion'];
+{
+ const select=document.getElementById('countyFundsBrowse');
+ const withLists=document.createElement('optgroup');withLists.label='Counties with name lists';
+ const others=document.createElement('optgroup');others.label='Other counties (no list yet)';
+ for(const option of [...select.options]){
+  if(!option.value)continue;
+  if(UNCLAIMED_LIST_COUNTIES.includes(option.value)){option.value=option.value;option.textContent+=' (names list)';withLists.append(option);}
+  else others.append(option);
+ }
+ select.append(withLists,others);
+}
 function browseCountyFunds(){
  loadUnclaimedList();
  const county=document.getElementById('countyFundsBrowse').value;
@@ -749,6 +758,9 @@ function renderForeclosureSales() {
    foreclosureWatch = updated;
    render();
    renderForeclosureSales();
+   const watchStatus = document.getElementById('foreclosureWatchStatus');
+   watchStatus.textContent = 'Added ' + sale.caseNo + ' to Your tracked cases.';
+   watchStatus.scrollIntoView?.({behavior: 'smooth', block: 'center'});
   });
   row.append(track);
   list.append(row);
@@ -771,6 +783,7 @@ function renderForeclosureWatch() {
   edit.type = 'button';
   edit.textContent = 'Update status';
   edit.addEventListener('click', () => {
+   foreclosureWatchForm.closest('details').open = true;
    foreclosureWatchForm.reset();
    for (const [key, value] of Object.entries(entry)) foreclosureWatchForm.elements.namedItem(key).value = value;
    foreclosureWatchForm.elements.namedItem('stage').focus();
@@ -783,6 +796,11 @@ function renderForeclosureWatch() {
    item.append(link.cloneNode(true));
    review.append(item);
   }
+ }
+ if (!list.children.length) {
+  const empty = document.createElement('li');
+  empty.textContent = 'No tracked cases yet. Click Track case on a sale below.';
+  list.append(empty);
  }
  if (!review.children.length) {
   const empty = document.createElement('li');
@@ -1133,6 +1151,7 @@ opportunityCaseForm.addEventListener('submit', event => {
    return;
   }
   go('foreclosure');
+  foreclosureWatchForm.closest('details').open = true;
   foreclosureWatchForm.reset();
   for (const [key,value] of Object.entries({...foreclosureWatch[foreclosureCaseKey('Polk',caseNo)],county:'Polk',caseNo,property,source})) {
    foreclosureWatchForm.elements.namedItem(key).value = value;
@@ -1169,7 +1188,10 @@ async function loadUnclaimedList(){
  output.namedRequest=request;
  output.replaceChildren();
  if(!county)return;
- if(!cloudSession){output.textContent='Sign in under Settings to see named unclaimed-money lists.';return;}
+ if(!cloudSession){
+  const signIn=document.createElement('button');signIn.type='button';signIn.className='btn';signIn.textContent='Go to Settings to sign in';
+  signIn.addEventListener('click',()=>{go('settings');document.getElementById('cloudEmail')?.scrollIntoView?.({block:'center'});});
+  output.replaceChildren('Sign in under Settings to see named unclaimed-money lists. ',signIn);return;}
  output.textContent='Loading '+county+' unclaimed money…';
  try{
   await cloudRefresh();
@@ -1187,8 +1209,10 @@ async function loadUnclaimedList(){
   const source=document.createElement('a');
   source.href=records[0].source;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Open clerk list';
   note.append(source);
-  const filter=document.createElement('input');filter.type='search';filter.placeholder='Filter by name, case or check number';
-  filter.setAttribute('aria-label',filter.placeholder);
+  const filter=document.createElement('input');filter.type='search';filter.placeholder='Type a name, case or check number';
+  filter.setAttribute('aria-label','Search names');
+  const searchLabel=document.createElement('b');searchLabel.textContent='Search names: ';
+  const searchButton=document.createElement('button');searchButton.type='button';searchButton.className='btn';searchButton.textContent='Search';
   const list=document.createElement('ul');
   const renderRows=()=>{
    const query=filter.value.trim().toLowerCase();
@@ -1201,8 +1225,9 @@ async function loadUnclaimedList(){
    if(!items.length){const item=document.createElement('li');item.textContent='No matching records.';list.append(item);}
   };
   filter.addEventListener('input',renderRows);
+  searchButton.addEventListener('click',renderRows);
   renderRows();
-  output.replaceChildren(heading,note,filter,list);
+  output.replaceChildren(heading,note,searchLabel,filter,searchButton,list);
  }catch(error){if(output.namedRequest===request)output.textContent=error.message||'Named lists are unavailable right now.';}
 }
 async function loadNamedReport(kind){
@@ -1257,7 +1282,8 @@ function refreshNamedReports(){
  loadNamedReport('surplus');
  loadUnclaimedList();
 }
-function cloudSessionFrom(x){if(!x?.access_token||!x?.refresh_token||!x?.user?.id)throw Error('Incomplete sign-in response.');return {...x,expires_at:Number(x.expires_at)||Date.now()/1000+Number(x.expires_in||3600)}}
+const CLOUD_SESSION_KEY='realdealspro_session';
+function cloudSessionFrom(x){if(!x?.access_token||!x?.refresh_token||!x?.user?.id)throw Error('Incomplete sign-in response.');try{localStorage.setItem(CLOUD_SESSION_KEY,x.refresh_token)}catch{}return {...x,expires_at:Number(x.expires_at)||Date.now()/1000+Number(x.expires_in||3600)}}
 async function cloudRequest(path,options={}){
  const response=await fetch(CLOUD_URL+path,{signal:AbortSignal.timeout(15000),...options,headers:{apikey:CLOUD_KEY,'Content-Type':'application/json',...(cloudSession?{Authorization:'Bearer '+cloudSession.access_token}:{}),...options.headers}});
  const text=await response.text();let data;try{data=text?JSON.parse(text):null}catch{throw Error('Unexpected cloud response. Local records retained.')}
@@ -1346,16 +1372,28 @@ async function syncWorkspace(){
  });
 }
 async function cloudLogin(){return cloudTask(async()=>{
- cloudMsg('Signing in…');cloudSession=null;refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;document.getElementById('cloudActions').classList.add('hidden');
+ cloudMsg('Signing in…');cloudSession=null;localStorage.removeItem(CLOUD_SESSION_KEY);refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;document.getElementById('cloudActions').classList.add('hidden');
  const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value;document.getElementById('cloudPassword').value='';
  if(!email||!password)throw Error('Enter your RealDealsPro™ email and password.');
  cloudSession=cloudSessionFrom(await cloudRequest('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})}));
+ await afterCloudSignIn();
+})}
+async function afterCloudSignIn(){
  document.getElementById('cloudActions').classList.remove('hidden');
  refreshNamedReports();
  const row=await readWorkspace();
  if(row&&workspaceSnapshot(row.data)===workspaceSnapshot(workspaceData()))markSynced(row.version,workspaceSnapshot(row.data));
  else cloudMsg(row?'Signed in. Load the cloud copy to start syncing. Download a backup first if you need these device records.':'Signed in. Review this device, then save it to start cloud sync.');
-})}
+}
+async function cloudRestore(){
+ const saved=localStorage.getItem(CLOUD_SESSION_KEY);
+ if(!saved||cloudSession)return;
+ return cloudTask(async()=>{
+  try{cloudSession=cloudSessionFrom(await cloudRequest('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:saved})}));}
+  catch{localStorage.removeItem(CLOUD_SESSION_KEY);cloudSession=null;return;}
+  await afterCloudSignIn();
+ });
+}
 async function cloudLoad(){return cloudTask(async()=>{
  await cloudRefresh();
  const row=await readWorkspace();
@@ -1383,8 +1421,9 @@ window.addEventListener('storage',event=>{
  }
 });
 }
-async function cloudLogout(){return cloudTask(async()=>{let failed=false;try{if(cloudSession)await cloudRequest('/auth/v1/logout',{method:'POST'})}catch{failed=true}cloudSession=null;refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;clearTimeout(syncTimer);document.getElementById('cloudActions').classList.add('hidden');cloudMsg('Signed out on this page. Local records remain on this device.'+(failed?' Remote session revocation could not be confirmed.':''))})}
+async function cloudLogout(){return cloudTask(async()=>{let failed=false;try{if(cloudSession)await cloudRequest('/auth/v1/logout',{method:'POST'})}catch{failed=true}cloudSession=null;localStorage.removeItem(CLOUD_SESSION_KEY);refreshNamedReports();cloudVersion=null;syncedSnapshot=null;syncPaused=false;clearTimeout(syncTimer);document.getElementById('cloudActions').classList.add('hidden');cloudMsg('Signed out on this page. Local records remain on this device.'+(failed?' Remote session revocation could not be confirmed.':''))})}
 
+if(typeof window!=='undefined')cloudRestore();
 function showCloudSignup(){if(cloudBusy)return;document.getElementById('cloudSignup').classList.toggle('hidden');}
 async function cloudSignup(){return cloudTask(async()=>{
  if(cloudSession)throw Error('Sign out before creating a separate account.');

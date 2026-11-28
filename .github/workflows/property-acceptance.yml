@@ -43,6 +43,7 @@ jobs:
            page.evaluate("go('kanban')")
            expect(page.locator('#kanban')).to_contain_text('Acceptance 100/100')
            page.evaluate("go('foreclosure')")
+           page.get_by_text('Add a case by hand').click()
            form=page.locator('#foreclosureWatchForm')
            for name,value in {'county':'Polk','caseNo':'TEST-01','property':'Test Parcel 000','source':'https://www.polkclerkfl.gov/'}.items():
             form.locator('[name='+name+']').fill(value)
