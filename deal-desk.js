@@ -277,30 +277,111 @@ function ddDocBody(kind, state, v, b) {
   return '';
 }
 
+function ddBuildDoc() {
+  const kind = document.getElementById('ddDocType').value;
+  const state = document.getElementById('ddDocState').value;
+  const v = Object.fromEntries(new FormData(document.getElementById('ddDocForm')));
+  for (const name of ddDocs[kind].fields) {
+    if (!String(v[name] ?? '').trim()) throw Error('Complete: ' + ddFieldLabels[name] + '.');
+    if (ddNumberFields.has(name) && (!Number.isFinite(Number(v[name])) || Number(v[name]) < 0)) throw Error(ddFieldLabels[name] + ' must be a non-negative number.');
+  }
+  if (kind === 'surplusAgreement') {
+    if (Number(v.feePct) > 100) throw Error('Fee % cannot exceed 100.');
+    if (state === 'FL' && v.saleType === 'mortgage' && Number(v.feePct) > 12) throw Error('Florida mortgage foreclosure surplus assignments are limited to 12% total compensation (Fla. Stat. 45.033(3)(d)).');
+  }
+  if (kind === 'jv' && Number(v.splitPct) > 100) throw Error('Profit share cannot exceed 100%.');
+  const b = ddBrand();
+  const title = ddDocs[kind].title;
+  const contact = [b.company || b.name, b.address, b.phone, b.email].filter(Boolean).map(escapeHtml).join(' · ');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Georgia,serif;max-width:780px;margin:24px auto;padding:0 18px;line-height:1.45;color:#111}h1{font-size:22px;text-align:center}h3{font-size:15px;margin:16px 0 4px}table{border-collapse:collapse;width:100%}td{border:1px solid #999;padding:5px}.draft{border:2px solid #b91c1c;color:#b91c1c;padding:8px;font-family:Arial,sans-serif;font-size:13px}.sig{display:flex;gap:30px;flex-wrap:wrap;margin-top:28px}.sig>div{flex:1;min-width:220px}.line{border-bottom:1px solid #000;height:34px}.hdr{text-align:center;font-family:Arial,sans-serif;font-size:12px}@media print{.noprint{display:none}}</style></head><body>
+    ${b.logo ? `<div style="text-align:center"><img src="${escapeHtml(b.logo)}" alt="" style="max-height:60px"></div>` : ''}<div class="hdr">${contact}</div>
+    <p class="draft"><b>DRAFT TEMPLATE — NOT LEGAL ADVICE.</b> Generated ${new Date().toLocaleDateString()} for use in ${ddStates[state].name}. Laws change and differ by county and claim type. Have a licensed ${ddStates[state].name} attorney review and approve this document before anyone signs it.</p>
+    <h1>${escapeHtml(title)}</h1>${ddDocBody(kind, state, v, b)}
+    <p class="noprint"><button onclick="print()">Print or save as PDF</button></p></body></html>`;
+  const signer = String(v.client || v.seller || v.partner || v.buyer || '').trim();
+  return {kind, title, html, signer, v};
+}
+
+async function ddSendForSignature() {
+  const status = document.getElementById('ddDocStatus');
+  const out = document.getElementById('ddSignLink');
+  try {
+    if (!cloudSession) throw Error('Sign in under Settings to send documents for e-signature.');
+    const {title, html, signer, v} = ddBuildDoc();
+    await cloudRefresh();
+    const [row] = await cloudRequest('/rest/v1/signature_requests?select=id', {method: 'POST', headers: {Prefer: 'return=representation'},
+      body: JSON.stringify({title, document_html: html, signer_name: signer, case_key: v.caseNo ? String(v.caseNo).trim().toUpperCase() : null})});
+    const link = location.origin + '/sign.html?id=' + encodeURIComponent(row.id);
+    const field = Object.assign(document.createElement('input'), {readOnly: true, value: link});
+    field.setAttribute('aria-label', 'Signing link');
+    const copy = Object.assign(document.createElement('button'), {type: 'button', className: 'btn ghost', textContent: 'Copy link'});
+    copy.addEventListener('click', () => navigator.clipboard?.writeText(link).then(() => { copy.textContent = 'Copied'; }));
+    const message = 'Please review and sign: ' + title + ' ' + link;
+    const email = Object.assign(document.createElement('a'), {href: 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(message), textContent: 'Email it'});
+    const text = Object.assign(document.createElement('a'), {href: 'sms:?&body=' + encodeURIComponent(message), textContent: 'Text it'});
+    const label = document.createElement('p');
+    label.textContent = 'Signing link for ' + signer + ':';
+    out.replaceChildren(label, field, copy, ' ', email, ' · ', text);
+    status.textContent = title + ' is ready to sign. Send the link to ' + signer + '. Have an attorney review it first.';
+    ddLoadSignatures();
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+async function ddLoadSignatures() {
+  const list = document.getElementById('ddSignList');
+  if (!list) return;
+  if (!cloudSession) { list.textContent = 'Sign in under Settings to send and track e-signatures.'; return; }
+  try {
+    await cloudRefresh();
+    const rows = await cloudRequest('/rest/v1/signature_requests?select=id,title,signer_name,case_key,status,signed_at,created_at&status=neq.void&order=created_at.desc&limit=50');
+    let advanced = false;
+    for (const row of rows) {
+      if (row.status !== 'signed' || !row.case_key) continue;
+      surplus.forEach((record, index) => {
+        if (record.caseNo.trim().toUpperCase() === row.case_key && CLAIM_STAGES.indexOf(record.claimStage || CLAIM_STAGES[0]) < CLAIM_STAGES.indexOf('Agreement signed')) {
+          surplus[index] = {...record, claimStage: 'Agreement signed'};
+          advanced = true;
+        }
+      });
+    }
+    if (advanced) { save(); render(); }
+    list.replaceChildren(...(rows.length ? rows.map(row => {
+      const line = document.createElement('div');
+      line.className = 'lead';
+      line.textContent = row.title + ' · ' + row.signer_name + ' · ' + (row.status === 'signed' ? 'Signed ' + new Date(row.signed_at).toLocaleString() : 'Waiting for signature') + ' ';
+      const button = Object.assign(document.createElement('button'), {type: 'button', className: 'btn ghost'});
+      if (row.status === 'signed') {
+        button.textContent = 'View signed copy';
+        button.addEventListener('click', () => ddOpenSigned(row.id));
+      } else {
+        button.textContent = 'Copy link';
+        button.addEventListener('click', () => navigator.clipboard?.writeText(location.origin + '/sign.html?id=' + encodeURIComponent(row.id)).then(() => { button.textContent = 'Copied'; }));
+      }
+      line.append(button);
+      return line;
+    }) : [Object.assign(document.createElement('p'), {textContent: 'No documents sent for signature yet.'})]));
+  } catch (error) {
+    list.textContent = 'E-signature requests are unavailable right now.';
+  }
+}
+
+async function ddOpenSigned(id) {
+  await cloudRefresh();
+  const [row] = await cloudRequest('/rest/v1/signature_requests?select=document_html,signature,signed_name,signed_at,signer_user_agent&id=eq.' + encodeURIComponent(id));
+  if (!row || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(row.signature || '')) return;
+  const block = `<div style="margin-top:28px;border-top:1px solid #999;padding-top:12px"><p><b>Electronic signature record</b></p><img src="${row.signature}" alt="Signature" style="max-width:300px;height:auto">
+    <p>${escapeHtml(row.signed_name)} · ${escapeHtml(new Date(row.signed_at).toLocaleString())}<br><span style="font-size:12px">Request ${escapeHtml(id)} · ${escapeHtml(row.signer_user_agent || '')}</span></p></div>`;
+  const html = row.document_html.includes('</body>') ? row.document_html.replace('</body>', block + '</body>') : row.document_html + block;
+  window.open(URL.createObjectURL(new Blob([html], {type: 'text/html'})), '_blank');
+}
+
 function ddGenerateDoc(event) {
   event.preventDefault();
   const status = document.getElementById('ddDocStatus');
   try {
-    const kind = document.getElementById('ddDocType').value;
-    const state = document.getElementById('ddDocState').value;
-    const v = Object.fromEntries(new FormData(document.getElementById('ddDocForm')));
-    for (const name of ddDocs[kind].fields) {
-      if (!String(v[name] ?? '').trim()) throw Error('Complete: ' + ddFieldLabels[name] + '.');
-      if (ddNumberFields.has(name) && (!Number.isFinite(Number(v[name])) || Number(v[name]) < 0)) throw Error(ddFieldLabels[name] + ' must be a non-negative number.');
-    }
-    if (kind === 'surplusAgreement') {
-      if (Number(v.feePct) > 100) throw Error('Fee % cannot exceed 100.');
-      if (state === 'FL' && v.saleType === 'mortgage' && Number(v.feePct) > 12) throw Error('Florida mortgage foreclosure surplus assignments are limited to 12% total compensation (Fla. Stat. 45.033(3)(d)).');
-    }
-    if (kind === 'jv' && Number(v.splitPct) > 100) throw Error('Profit share cannot exceed 100%.');
-    const b = ddBrand();
-    const title = ddDocs[kind].title;
-    const contact = [b.company || b.name, b.address, b.phone, b.email].filter(Boolean).map(escapeHtml).join(' · ');
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Georgia,serif;max-width:780px;margin:24px auto;padding:0 18px;line-height:1.45;color:#111}h1{font-size:22px;text-align:center}h3{font-size:15px;margin:16px 0 4px}table{border-collapse:collapse;width:100%}td{border:1px solid #999;padding:5px}.draft{border:2px solid #b91c1c;color:#b91c1c;padding:8px;font-family:Arial,sans-serif;font-size:13px}.sig{display:flex;gap:30px;flex-wrap:wrap;margin-top:28px}.sig>div{flex:1;min-width:220px}.line{border-bottom:1px solid #000;height:34px}.hdr{text-align:center;font-family:Arial,sans-serif;font-size:12px}@media print{.noprint{display:none}}</style></head><body>
-      ${b.logo ? `<div style="text-align:center"><img src="${escapeHtml(b.logo)}" alt="" style="max-height:60px"></div>` : ''}<div class="hdr">${contact}</div>
-      <p class="draft"><b>DRAFT TEMPLATE — NOT LEGAL ADVICE.</b> Generated ${new Date().toLocaleDateString()} for use in ${ddStates[state].name}. Laws change and differ by county and claim type. Have a licensed ${ddStates[state].name} attorney review and approve this document before anyone signs it.</p>
-      <h1>${escapeHtml(title)}</h1>${ddDocBody(kind, state, v, b)}
-      <p class="noprint"><button onclick="print()">Print or save as PDF</button></p></body></html>`;
+    const {title, html} = ddBuildDoc();
     const url = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
     const win = window.open(url, '_blank');
     if (!win) {
