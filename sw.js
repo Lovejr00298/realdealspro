@@ -1,5 +1,5 @@
-const CACHE = 'realdealspro-v9';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/property-search.js', '/deal-desk.js', '/outreach.js', '/icons/icon-192.png', '/icons/icon-512.png'];
+const CACHE = 'realdealspro-v10';
+const SHELL = ['/', '/index.html', '/guide.html', '/manifest.webmanifest', '/property-search.js', '/deal-desk.js', '/outreach.js', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

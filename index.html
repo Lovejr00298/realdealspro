@@ -14,6 +14,9 @@ header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.85;font-size:
 .tabs{display:flex;gap:6px;overflow:auto;padding:10px 0}
 .tabs button{white-space:nowrap;border:1px solid #ddd;background:#fff;padding:9px 13px;border-radius:999px;font-weight:700;cursor:pointer}
 .tabs button.on{background:#0b1e3a;color:#fff;border-color:#0b1e3a}
+.subtabs{padding-top:0}.subtabs:empty{display:none}.subtabs button{font-weight:600;font-size:14px;padding:7px 11px}#subtabs button.on{background:#e8eef8!important;color:#0b1e3a!important;border-color:#c7d7f5!important}
+#viewHelp{background:#eef4ff;border:1px solid #c7d7f5;border-radius:12px;padding:10px 12px;margin:0 0 10px}
+#startSteps li{margin:10px 0}#startSteps li.done{color:#15803d}#startSteps button{margin-left:6px;width:auto;display:inline-block;padding:4px 10px;font-size:13px;border:1px solid #c7d7f5;background:#eef4ff;color:#0b1e3a;border-radius:999px;cursor:pointer;font-weight:700}
 .panel{background:#fff;border-radius:14px;padding:14px;margin-top:6px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
 h2{margin:0 0 8px;font-size:17px}h3{margin:14px 0 6px;font-size:15px}
 input,select,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:5px 0;font-size:15px}
@@ -33,12 +36,16 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 .yellowBox{background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:12px}
 .psChecks label{display:flex;gap:8px;align-items:flex-start;margin:6px 0}
 </style></head><body>
-<header><h1>SQPR RealDealsPro™</h1><p>Florida Off Market Deal System • realdeals.proverifyfield.com</p><span id="modeBadge" class="badge">DEVICE WORKSPACE — LIVE SERVICES NOT CONNECTED</span><p class="small" style="color:#fff">Repair release • November 19, 2026</p></header>
+<header><h1>SQPR RealDealsPro™</h1><p>Surplus funds recovery and real estate deals • FL, GA, NC, SC</p><span id="modeBadge" class="badge">DEVICE WORKSPACE — LIVE SERVICES NOT CONNECTED</span></header>
 <div class="wrap">
-<div class="cards"><div class="card"><b id="cTotal">0</b><span>Total Leads</span></div><div class="card"><b id="cHot">0</b><span>Hot Leads</span></div><div class="card"><b id="cVault">0</b><span>In Vault</span></div><div class="card"><b id="cInv">0</b><span>Buyers / Investors</span></div></div>
-<div class="panel"><h2>💰 Surplus Funds Summary</h2><div class="row"><div><b id="sTotal" style="font-size:22px">$0</b><div class="small">Estimated balance in saved cases</div></div><div><b id="sOpen" style="font-size:22px">0</b><div class="small">Open Surplus Cases</div></div></div><p class="small">Sale less debt is an estimate, not a verified distributable balance. Confirm fees, lien priority, claimant eligibility and deadlines with the Clerk or your attorney.</p></div>
 <div class="tabs" id="tabs"></div>
-<div id="view-dashboard" class="panel"><h2>Daily Review</h2><p class="small">Review saved foreclosure cases and bankruptcy flags. Update sale dates from court records.</p><ul id="dailyReview"></ul><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. Use Parcel Search to find Polk County properties. This processor works on saved records.</p>
+<div class="subtabs tabs" id="subtabs"></div>
+<p class="small hidden" id="viewHelp"></p>
+<section id="view-start" class="panel"><h2>Start here</h2><p class="small">RealDealsPro finds money owed to former property owners and off-market deals, then helps you sign owners, file claims and sell deals to buyers. Work through these steps:</p><ol id="startSteps"></ol><p><a href="guide.html" target="_blank" rel="noopener">Open the one-page quick guide</a> (printable)</p><h3>Your numbers</h3>
+<div class="cards"><div class="card"><b id="cTotal">0</b><span>Total Leads</span></div><div class="card"><b id="cHot">0</b><span>Hot Leads</span></div><div class="card"><b id="cVault">0</b><span>In Vault</span></div><div class="card"><b id="cInv">0</b><span>Buyers / Investors</span></div></div>
+<div><h2>💰 Surplus Funds Summary</h2><div class="row"><div><b id="sTotal" style="font-size:22px">$0</b><div class="small">Estimated balance in saved cases</div></div><div><b id="sOpen" style="font-size:22px">0</b><div class="small">Open Surplus Cases</div></div></div><p class="small">Sale less debt is an estimate, not a verified distributable balance. Confirm fees, lien priority, claimant eligibility and deadlines with the Clerk or your attorney.</p></div>
+</section>
+<div id="view-dashboard" class="panel hidden"><h2>Daily Review</h2><p class="small">Review saved foreclosure cases and bankruptcy flags. Update sale dates from court records.</p><ul id="dailyReview"></ul><h2>Saved Record Processing</h2><p class="small">Processes records already saved on this device. Use Parcel Search to find Polk County properties. This processor works on saved records.</p>
 <div class="toggle"><label for="autoScore">Recalculate scores</label><input id="autoScore" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoVault">Move scores 80+ to Vault</label><input id="autoVault" type="checkbox" checked style="width:22px"></div>
 <div class="toggle"><label for="autoSurplus">Review saved surplus cases</label><input id="autoSurplus" type="checkbox" checked style="width:22px"></div>
@@ -204,7 +211,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 </form></details><h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Click <b>Track case</b> to add a sale to Your tracked cases above. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList" style="max-height:60vh;overflow:auto"></div>
 <button type="button" onclick="go('surplus')">Go to Sale Surplus</button>
 </section>
-<div id="view-surplus" class="panel hidden"><h2>💰 Sale Surplus — Florida</h2><details><summary>Official claim forms</summary><ul><li><a href="https://www.duvalclerk.gov/getmedia/3884dee5-d53c-4a4c-86a3-6040a5aed6c6/foreclosure-surplus-claim.pdf">Duval mortgage foreclosure owner claim</a></li><li><a href="https://www.duvalclerk.gov/getmedia/9a03a97e-6970-4343-a91b-82f9cde23a5b/Claim-to-Receive-Surplus-Funds.pdf">Duval tax-deed surplus claim</a></li><li><a href="https://osceolaclerk.com/wp-content/uploads/Surplus-Claim-Fill-in-Form-Rev-1.22.2020-JR.pdf">Osceola tax-deed surplus claim</a></li></ul><p>Confirm the current form with the clerk for your case.</p></details><h3>Foreclosure sales to review</h3><ul id="foreclosureSurplusReview"></ul><details>
+<div id="view-surplus" class="panel hidden"><h2>💰 Surplus cases</h2><details><summary>Official claim forms</summary><ul><li><a href="https://www.duvalclerk.gov/getmedia/3884dee5-d53c-4a4c-86a3-6040a5aed6c6/foreclosure-surplus-claim.pdf">Duval mortgage foreclosure owner claim</a></li><li><a href="https://www.duvalclerk.gov/getmedia/9a03a97e-6970-4343-a91b-82f9cde23a5b/Claim-to-Receive-Surplus-Funds.pdf">Duval tax-deed surplus claim</a></li><li><a href="https://osceolaclerk.com/wp-content/uploads/Surplus-Claim-Fill-in-Form-Rev-1.22.2020-JR.pdf">Osceola tax-deed surplus claim</a></li></ul><p>Confirm the current form with the clerk for your case.</p></details><h3>Foreclosure sales to review</h3><ul id="foreclosureSurplusReview"></ul><details>
 <summary>Official surplus research links</summary>
 <p class="small">Use the tax-deed case number and parcel ID to match records. Confirm the report date, remaining balance, and who holds the funds before recording a lead as verified.</p>
 <ul>
@@ -337,9 +344,51 @@ function seed(preserve=false){
 }
 if(!leads||!surplus||!investors) seed(true);
 function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));localStorage.setItem('rdp_investors_v3',JSON.stringify(investors));localStorage.setItem('rdp_surplus_v3',JSON.stringify(surplus));localStorage.setItem('rdp_logs_v3',JSON.stringify(logs));localStorage.setItem('rdp_settings_v3',JSON.stringify(settings));queueCloudSync();}
-let tab='dashboard';
-const tabs=[['dashboard','Dashboard'],['review','Deal Review'],['outreach','Outreach'],['prop-search','Property Search'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
-function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
+let tab='start';
+const NAV=[['Start here',[['start','Start here']]],
+ ['Find money',[['surplus','Surplus cases'],['foreclosure','Upcoming foreclosures'],['county-funds','Unclaimed funds']]],
+ ['Find deals',[['prop-search','Property search'],['review','Ranked deals'],['leads','Saved leads'],['vault','Hot 80+'],['kanban','Board'],['dashboard','Daily review'],['parcel-search','Polk parcels']]],
+ ['Buyers & outreach',[['investors','Buyers'],['outreach','Campaigns'],['scripts','Call scripts']]],
+ ['Documents',[['contracts','Documents & e-sign']]],
+ ['Settings',[['settings','Settings']]]];
+const HELP={
+ surplus:'Money left over after county tax-deed and foreclosure sales. Pick a county, click Add to my cases, then Find owner. Move each saved case through the claim stages until it is paid.',
+ foreclosure:'Upcoming clerk foreclosure sales. Click Track case to follow one. After the sale date passes it shows up under Surplus cases for review.',
+ 'county-funds':'Unclaimed money held by county clerks, such as jury pay, refunds and old checks. Sign in, pick a county marked (names list) and search.',
+ 'prop-search':'Search public property records in FL, NC, GA and SC. Filter for distress signals, view results on the map and save leads.',
+ review:'Every saved lead and surplus case, ranked best first. Approve a deal before sharing it with buyers.',
+ leads:'Properties you saved. Update status and notes; scores update automatically.',
+ vault:'Your hottest leads, scored 80 or higher.',
+ kanban:'Your saved leads arranged by stage.',
+ dashboard:'Daily to-dos for tracked foreclosure cases, plus processing for records saved on this device.',
+ 'parcel-search':'Look up Polk County parcels by owner, address or parcel number.',
+ investors:"People you sell deals to. Add each buyer's buy box and the app matches them to your approved deals.",
+ outreach:'Email, text and mail campaigns. Build a campaign, approve it, then send. Opt-outs, quiet hours and daily limits apply automatically.',
+ scripts:'Talk tracks for calling owners and buyers.',
+ contracts:'Fill in a template, then print it or click Send for e-signature to text or email a signing link. Have an attorney review documents before you use them.',
+ settings:'Sign in, cloud sync, branding and claim-fee settings.'};
+function navGroup(t){return NAV.find(group=>group[1].some(view=>view[0]===t))}
+function showTabs(){
+ const group=navGroup(tab);
+ document.getElementById('tabs').innerHTML=NAV.map(g=>`<button class="${g===group?'on':''}" onclick="go('${g[1][0][0]}')">${g[0]}</button>`).join('');
+ document.getElementById('subtabs').innerHTML=group[1].length>1?group[1].map(v=>`<button class="${v[0]==tab?'on':''}" onclick="go('${v[0]}')">${v[1]}</button>`).join(''):'';
+ const help=document.getElementById('viewHelp');
+ help.textContent=HELP[tab]||'';
+ help.classList.toggle('hidden',!HELP[tab]);
+}
+function renderStart(){
+ const box=document.getElementById('startSteps');
+ if(!box)return;
+ const reached=stage=>surplus.some(record=>CLAIM_STAGES.indexOf(record.claimStage)>=CLAIM_STAGES.indexOf(stage)&&record.claimStage!=='Not pursuing');
+ const steps=[
+  [!!cloudSession,'Sign in so your cases sync and owner names unlock.','settings','Settings'],
+  [surplus.some(record=>record.claimStage),'Find money: pick a county under Surplus cases and click Add to my cases.','surplus','Surplus cases'],
+  [reached('Owner contacted'),'Find the owner: click Find owner, then Get phone and email. Set the case stage to Owner contacted.','surplus','Surplus cases'],
+  [reached('Agreement signed'),'Send the agreement: fill in the fee agreement and click Send for e-signature.','contracts','Documents'],
+  [reached('Claim filed'),'File the claim with the clerk, then move the case to Claim filed and Paid.','surplus','Surplus cases'],
+  [investors.some(investor=>!/test/i.test(investor.notes||'')),'Optional: add real buyers, approve your best deals and send them out.','investors','Buyers']];
+ box.innerHTML=steps.map(([done,text,view,label])=>`<li class="${done?'done':''}">${done?'✓ ':''}${text} <button type="button" onclick="go('${view}')">Open ${label}</button></li>`).join('');
+}
 function go(t){tab=t;if((t==='contracts'||t==='surplus')&&typeof ddLoadSignatures==='function')ddLoadSignatures();showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='foreclosure')loadForeclosureSales();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadUnclaimedList();if(t==='prop-search')propSearchShown();if(t==='review')ddRenderReview();if(t==='outreach')outreachShown()}
 function runAutomation(){
  const county=document.getElementById('county').value;let found=0,hot=0,vaulted=0;
@@ -895,6 +944,7 @@ function matchesLeadType(lead, filter) {
  }
 }
 function render(){
+ renderStart();
  renderForeclosureWatch();
  renderDailyReview();
  if (tab === "county-funds") renderCountyFunds();
