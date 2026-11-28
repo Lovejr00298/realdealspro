@@ -12,8 +12,7 @@ CHECKS = "https://www.marioncountyclerk.org/uploads/2026/04/Stale-Dated-checks-W
 CHECK_ROW = re.compile(r"^\s*(\d{2}/\d{2}/\d{2})\s+(\d+)\s+([\d,]+\.\d{2})\s+(.+?)\s*$")
 
 
-def snapshots(surplus_text, checks_text):
-    balances = parse_report(surplus_text, SURPLUS)
+def names_by_sale(surplus_text):
     names = {}
     for line in surplus_text.splitlines():
         match = ROW.match(line)
@@ -22,6 +21,12 @@ def snapshots(surplus_text, checks_text):
             name = line[match.end():].strip()
             if name:
                 names.setdefault((sale.replace(" ", ""), parcel.upper()), set()).add(name)
+    return names
+
+
+def snapshots(surplus_text, checks_text):
+    balances = parse_report(surplus_text, SURPLUS)
+    names = names_by_sale(surplus_text)
     assessed = []
     for row in balances:
         matches = names.get((row["taxDeedId"], row["parcelId"]), set())

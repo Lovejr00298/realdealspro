@@ -24,9 +24,11 @@ jobs:
           open('test-private-key.txt', 'w').write(base64.b64encode(key.private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())).decode())
           pem = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
           unclaimed = {'Volusia': {'status': 'ok', 'records': [{'county': 'Volusia', 'name': 'JANE TESTER', 'reference': '153969', 'date': '2024-07-11', 'category': 'POOLED CASH', 'amount': 177.0, 'source': 'https://www.clerk.org/pdf/notices/2026-Unclaimed-Payments-Notice.pdf'}]}}
-          json.dump(seal({'fetchedAt': '2026-11-27T00:00:00Z', 'unclaimed': unclaimed}, pem), open('county-private.json', 'w'))
-          sales = {'Osceola': {'status': 'ok', 'records': [{'county': 'Osceola', 'caseNo': '2025 CA 000001 MF', 'saleDate': '2099-12-01', 'plaintiff': 'TEST BANK NA', 'source': 'https://courts.osceolaclerk.com/reports/CivilMortgageForeclosuresWeb.pdf'}]}}
-          json.dump({'fetchedAt': '2026-11-27T00:00:00Z', 'counties': {}, 'foreclosureSales': sales}, open('county-discovery.json', 'w'))
+          json.dump(seal({'fetchedAt': '2026-11-27T00:00:00Z', 'unclaimed': unclaimed, 'surplusNames': {'Pasco': {'2023-0045': 'DOE JOHN'}}}, pem), open('county-private.json', 'w'))
+          sales = {'Osceola': {'status': 'ok', 'records': [{'county': 'Osceola', 'caseNo': '2025 CA 000001 MF', 'saleDate': '2099-12-01', 'plaintiff': 'TEST BANK NA', 'source': 'https://courts.osceolaclerk.com/reports/CivilMortgageForeclosuresWeb.pdf'},
+                                                      {'county': 'Osceola', 'caseNo': '2024 CA 000009 MF', 'saleDate': '2025-01-15', 'plaintiff': 'OLD BANK', 'dropped': True, 'source': 'https://courts.osceolaclerk.com/reports/CivilMortgageForeclosuresWeb.pdf'}]}}
+          counties = {'Pasco': {'status': 'ok', 'records': [{'taxDeedId': '2023-0045', 'reportedBalance': 23011.34, 'parcelId': '21-25-17-0110-19700-0070', 'source': 'https://app.pascoclerk.com/report.xlsx'}]}}
+          json.dump({'fetchedAt': '2026-11-27T00:00:00Z', 'counties': counties, 'foreclosureSales': sales}, open('county-discovery.json', 'w'))
           PY
           python -m http.server 8754 &
           python - <<'PY'
@@ -40,6 +42,12 @@ jobs:
            page.on('pageerror', lambda e: errors.append(str(e)))
            page.route('https://unpkg.com/**', lambda r: r.abort())
            page.route('https://jfmedjpcvbwmkytdjbmm.supabase.co/rest/v1/report_keys**', lambda r: r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps([{'private_key': private_key}])))
+           def parcels(route):
+               match = 'LIKE' in route.request.url
+               attrs = {'PARCEL_ID': 'OTHER-1' if match else '21-25-17-0110-19700-0070', 'CO_NO': 61, 'OWN_NAME': 'DOE JOHN' if match else 'SNF FUND LLC',
+                        'OWN_ADDR1': '1 MAIN ST' if match else 'PO BOX 46189', 'OWN_CITY': 'TAMPA', 'OWN_STATE': 'FL', 'OWN_ZIPCD': 33602, 'PHY_ADDR1': '5 OAK AVE', 'PHY_CITY': 'DADE CITY'}
+               route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps({'features': [{'attributes': attrs}]}))
+           page.route('https://services9.arcgis.com/**', parcels)
            page.goto('http://localhost:8754')
            page.evaluate("go('foreclosure')")
            expect(page.locator('#fcSalesStatus')).to_contain_text('1 scheduled sales in Osceola County')
@@ -62,6 +70,15 @@ jobs:
            expect(page.locator('#unclaimedNamedReport').get_by_role('button', name='Search')).to_be_visible()
            page.get_by_label('Search names').fill('nobody')
            expect(page.locator('#unclaimedNamedReport')).to_contain_text('No matching records')
+           page.evaluate("go('surplus')")
+           expect(page.locator('#foreclosureSurplusReview')).to_contain_text('2024 CA 000009 MF')
+           expect(page.locator('#foreclosureSurplusReview')).to_contain_text('confirm the result')
+           page.select_option('#discoveryCounty', 'Pasco')
+           expect(page.locator('#discoveryResults')).to_contain_text('Former owner on clerk report: DOE JOHN')
+           page.locator('#discoveryResults').get_by_role('button', name='Find owner').click()
+           expect(page.locator('#discoveryResults')).to_contain_text('Property record now lists SNF FUND LLC')
+           expect(page.locator('#discoveryResults')).to_contain_text('Owner-name match: DOE JOHN')
+           expect(page.locator('#discoveryResults')).to_contain_text('skip-tracing')
            assert not errors, errors
            restored = b.new_page()
            restored.on('pageerror', lambda e: errors.append(str(e)))
