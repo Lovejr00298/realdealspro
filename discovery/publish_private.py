@@ -14,7 +14,6 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from clerk_lists import gather, unclaimed_lists
 from georgia import fetch
 from marion_private import names_by_sale
-from run import run
 
 PUBLIC_KEY = Path(__file__).with_name("private_lists_public.pem")
 
@@ -49,6 +48,7 @@ def marion_names(records):
 
 
 def all_surplus_names():
+    from run import run
     batch = run()
     names = surplus_names(batch)
     marion = batch["counties"].get("Marion", {})
