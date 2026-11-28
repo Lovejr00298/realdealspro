@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - index.html
+      - sign.html
+      - guide.html
       - manifest.webmanifest
       - sw.js
       - property-search.js
