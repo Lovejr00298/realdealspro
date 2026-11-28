@@ -50,6 +50,11 @@ def marion_names(records):
 def all_surplus_names():
     from run import run
     batch = run()
+    failed = [county for county, result in batch["counties"].items() if result["status"] != "ok"]
+    for county in failed:
+        print(f"{county} names: {batch['counties'][county]['error']}", file=sys.stderr)
+    if failed:
+        batch["counties"].update(run(failed)["counties"])
     names = surplus_names(batch)
     marion = batch["counties"].get("Marion", {})
     if marion.get("status") == "ok" and marion["records"]:

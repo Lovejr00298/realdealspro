@@ -3,8 +3,9 @@ from datetime import date
 import json
 from pathlib import Path
 import sys
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
+import osceola
 from clerk_lists import foreclosure_sales, gather, merge_sale_history
 from run import run
 
@@ -14,17 +15,28 @@ PUBLIC_FIELDS = ("taxDeedId", "reportedBalance", "source", "reportDate", "parcel
 
 def previous_sales():
     try:
-        with urlopen(PREVIOUS, timeout=20) as response:
+        with urlopen(Request(PREVIOUS, headers={"User-Agent": "Mozilla/5.0 RealDealsPro"}), timeout=20) as response:
             return json.load(response).get("foreclosureSales", {})
     except Exception as error:
         print(f"Previous sale lists: {error}", file=sys.stderr)
         return {}
 
 
+def osceola_report():
+    try:
+        report, rejected = osceola.live()
+        if rejected:
+            print(f"Osceola: excluded {len(rejected)} ambiguous rows", file=sys.stderr)
+        return report
+    except Exception as error:
+        print(f"Osceola live report: {error}", file=sys.stderr)
+        snapshot = Path(__file__).with_name("osceola-2026-11-24.json")
+        return json.loads(snapshot.read_text(encoding="utf-8"))
+
+
 def public_batch(batch):
     counties = {}
-    snapshot = Path(__file__).with_name("osceola-2026-11-24.json")
-    sources = {**batch["counties"], "Osceola": json.loads(snapshot.read_text(encoding="utf-8"))}
+    sources = {**batch["counties"], "Osceola": osceola_report()}
     for county, result in sources.items():
         if result["status"] != "ok":
             print(f"{county}: {result['error']}", file=sys.stderr)

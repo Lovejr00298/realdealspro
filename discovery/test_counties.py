@@ -1,10 +1,25 @@
 import unittest
+from unittest import mock
 
 from georgia import parse_chatham, parse_clayton
 from volusia import parse_volusia
+import osceola
 
 
 class CountyParsers(unittest.TestCase):
+    def test_osceola_live_report_is_current(self):
+        text = """Tax Deeds Surplus Funds Available
+Report Date:             11/27/2026 7:55:04 AM
+ 11/10/2026
+                  155-2026           6032024            $20,754.50                         032528340700014223
+"""
+        with mock.patch("georgia.fetch", return_value=b"%PDF"), mock.patch("clerk_lists.layout_text", return_value=text):
+            report, rejected = osceola.live()
+        self.assertEqual(rejected, [])
+        self.assertFalse(report["stale"])
+        self.assertEqual(report["records"], [{"taxDeedId": "155-2026", "reportedBalance": 20754.5, "reportDate": "2026-11-27",
+                                              "parcelId": "032528340700014223", "source": osceola.REPORT}])
+
     def test_clayton(self):
         text = "EXCESS FUNDS LISTING\nJUNE 2026\nWILLIAMS, DEVON 05213 214013 A07 44,134.74$              11/05/24\nC&S REALTY SOLUTIONS LLC 05247D  F005 3,107.06$                10/05/21\nZERO OWNER 05015 017010 0.00$ 02/02/21"
         rows = parse_clayton(text)

@@ -49,6 +49,13 @@ def parse_snapshot(report):
     return {"status": "ok", "stale": True, "records": records}, sorted(rejected)
 
 
+def live():
+    from clerk_lists import layout_text
+    from georgia import fetch
+    snapshot, rejected = parse_snapshot(layout_text(fetch(REPORT)))
+    return {**snapshot, "stale": False}, rejected
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report_text", type=Path)

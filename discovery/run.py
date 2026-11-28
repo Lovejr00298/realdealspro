@@ -11,7 +11,7 @@ from georgia import checked, fetch_chatham, fetch_clayton, fetch_cobb, fetch_dek
 from volusia import fetch_volusia
 
 
-def run():
+def run(only=None):
     sources = {
         "Pasco": fetch_latest, "Hillsborough": fetch_candidates, "Marion": fetch_marion,
         "DeKalb, GA": lambda: checked(fetch_dekalb(), "DeKalb"),
@@ -21,6 +21,8 @@ def run():
         "Chatham, GA": lambda: checked(fetch_chatham(), "Chatham"),
         "Volusia": lambda: checked(fetch_volusia(), "Volusia"),
     }
+    if only:
+        sources = {county: fetch for county, fetch in sources.items() if county in only}
     results = {}
     with ThreadPoolExecutor(max_workers=len(sources)) as pool:
         jobs = {county: pool.submit(fetch) for county, fetch in sources.items()}
