@@ -79,6 +79,55 @@ jobs:
            expect(page.locator('#discoveryResults')).to_contain_text('Property record now lists SNF FUND LLC')
            expect(page.locator('#discoveryResults')).to_contain_text('Owner-name match: DOE JOHN')
            expect(page.locator('#discoveryResults')).to_contain_text('skip-tracing')
+           page.locator('#discoveryResults').get_by_role('button', name='Add to my cases').click()
+           expect(page.locator('#discoveryResults').get_by_role('button', name='In my cases')).to_be_disabled()
+           expect(page.locator('#surplusList')).to_contain_text('2023-0045')
+           expect(page.locator('#claimPipeline')).to_contain_text('Researching: ')
+           signed = {'id': '11111111-2222-3333-4444-555555555555', 'title': 'Surplus Funds Recovery Services Agreement', 'signer_name': 'DOE JOHN', 'case_key': '2023-0045',
+                     'status': 'signed', 'signed_at': '2026-11-28T12:00:00Z', 'created_at': '2026-11-28T11:00:00Z'}
+           def signatures(route):
+               body = [{'id': signed['id']}] if route.request.method == 'POST' else [signed]
+               route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps(body))
+           page.route('https://jfmedjpcvbwmkytdjbmm.supabase.co/rest/v1/signature_requests**', signatures)
+           page.evaluate("go('contracts')")
+           expect(page.locator('#ddSignList')).to_contain_text('Signed')
+           page.evaluate("""() => { const f = document.getElementById('ddDocForm');
+             const values = {client: 'DOE JOHN', caseNo: '2023-0045', county: 'Pasco', property: '5 OAK AVE', saleDate: '2026-01-01', salePrice: '50000', surplus: '23011', assessed: '90000', debt: '0', feePct: '10'};
+             for (const [name, value] of Object.entries(values)) if (f.elements[name]) f.elements[name].value = value; }""")
+           page.get_by_role('button', name='Send for e-signature').click()
+           expect(page.locator('#ddSignLink')).to_contain_text('Signing link for DOE JOHN')
+           assert page.get_by_label('Signing link').input_value().endswith('/sign.html?id=11111111-2222-3333-4444-555555555555')
+           page.evaluate("go('surplus')")
+           expect(page.locator('#claimPipeline')).to_contain_text('Agreement signed: 1')
+           sign_state = {'status': 'sent'}
+           def sign_rpc(route):
+               if route.request.url.endswith('get_signature_request'):
+                   done = sign_state['status'] == 'signed'
+                   body = [{'title': 'Surplus Funds Recovery Services Agreement', 'document_html': '<html><body><h1>Agreement</h1><p class="noprint"><button>Print</button></p></body></html>',
+                            'signer_name': 'DOE JOHN', 'status': sign_state['status'], 'signature': sign_state.get('signature'),
+                            'signed_name': 'DOE JOHN' if done else None, 'signed_at': '2026-11-28T12:00:00Z' if done else None}]
+               else:
+                   payload = json.loads(route.request.post_data)
+                   assert payload['signature_png'].startswith('data:image/png;base64,') and payload['typed_name'] == 'DOE JOHN'
+                   sign_state.update(status='signed', signature=payload['signature_png'])
+                   body = True
+               route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps(body))
+           signer = b.new_page()
+           signer.on('pageerror', lambda e: errors.append(str(e)))
+           signer.route('https://jfmedjpcvbwmkytdjbmm.supabase.co/rest/v1/rpc/**', sign_rpc)
+           signer.goto('http://localhost:8754/sign.html?id=11111111-2222-3333-4444-555555555555')
+           expect(signer.locator('#status')).to_contain_text('Prepared for DOE JOHN')
+           signer.get_by_role('button', name='Sign document').click()
+           expect(signer.locator('#status')).to_contain_text('Draw your signature')
+           box = signer.locator('#pad').bounding_box()
+           signer.mouse.move(box['x'] + 20, box['y'] + 30)
+           signer.mouse.down()
+           signer.mouse.move(box['x'] + 160, box['y'] + 60, steps=8)
+           signer.mouse.up()
+           signer.get_by_label('I agree to sign').check()
+           signer.get_by_role('button', name='Sign document').click()
+           expect(signer.locator('#status')).to_contain_text('Signed by DOE JOHN')
+           expect(signer.locator('#signing')).to_be_hidden()
            assert not errors, errors
            restored = b.new_page()
            restored.on('pageerror', lambda e: errors.append(str(e)))

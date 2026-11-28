@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign document</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:820px;margin:0 auto;padding:16px;color:#111}
+iframe{width:100%;height:60vh;border:1px solid #ccc;border-radius:6px;background:#fff}
+canvas{display:block;border:1px solid #888;border-radius:6px;width:100%;max-width:600px;aspect-ratio:4/1;touch-action:none;background:#fff}
+button{padding:10px 16px;font-size:16px;margin:6px 6px 0 0}
+input[type=text]{width:100%;max-width:600px;padding:10px;font-size:16px;box-sizing:border-box}
+.small{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<h1 id="title">Loading document…</h1>
+<p id="status" role="status"></p>
+<iframe id="doc" sandbox="allow-same-origin allow-modals" title="Document" hidden></iframe>
+<p><button type="button" id="print" hidden>Print or save a copy</button></p>
+<div id="signing" hidden>
+<p class="small">Read the whole document before signing.</p>
+<label for="name">Type your full legal name</label>
+<input id="name" type="text" autocomplete="name">
+<p id="padLabel">Draw your signature</p>
+<canvas id="pad" width="600" height="150" aria-labelledby="padLabel"></canvas>
+<button type="button" id="clear">Clear signature</button>
+<p><label><input type="checkbox" id="consent"> I agree to sign this document electronically. My electronic signature has the same effect as my handwritten signature.</label></p>
+<button type="button" id="sign">Sign document</button>
+</div>
+<script>
+const API = 'https://jfmedjpcvbwmkytdjbmm.supabase.co/rest/v1/rpc/';
+const KEY = 'sb_publishable_2wx2AEIzFiUwFvPkwV9x8A_rtbUxftX';
+const requestId = new URLSearchParams(location.search).get('id') || '';
+const $ = id => document.getElementById(id);
+const status = text => { $('status').textContent = text; };
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
+async function rpc(name, body) {
+  const response = await fetch(API + name, {method: 'POST', headers: {apikey: KEY, 'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  if (!response.ok) throw Error('The signing service is unavailable. Try again later.');
+  return response.json();
+}
+
+function show(doc) {
+  $('title').textContent = doc.title;
+  let html = doc.document_html.replace(/<p class="noprint">[\s\S]*?<\/p>/g, '');
+  if (doc.status === 'signed') {
+    const block = `<div style="margin-top:28px;border-top:1px solid #999;padding-top:12px"><p><b>Electronically signed</b></p>
+      <img src="${esc(doc.signature)}" alt="Signature" style="max-width:300px;height:auto"><p>${esc(doc.signed_name)} · ${esc(new Date(doc.signed_at).toLocaleString())}</p></div>`;
+    html = html.includes('</body>') ? html.replace('</body>', block + '</body>') : html + block;
+  }
+  $('doc').srcdoc = html;
+  $('doc').hidden = false;
+  $('print').hidden = false;
+  $('signing').hidden = doc.status !== 'sent';
+  if (doc.status === 'signed') status('Signed by ' + doc.signed_name + ' on ' + new Date(doc.signed_at).toLocaleString() + '. Keep a copy for your records.');
+  else { status('Prepared for ' + doc.signer_name + '.'); $('name').value ||= doc.signer_name; }
+}
+
+async function load() {
+  if (!/^[0-9a-f-]{36}$/i.test(requestId)) { $('title').textContent = 'Document not found'; status('This signing link is incomplete. Ask the sender for a new link.'); return; }
+  try {
+    const [doc] = await rpc('get_signature_request', {request_id: requestId});
+    if (!doc) { $('title').textContent = 'Document not found'; status('This signing link has expired or been withdrawn.'); return; }
+    show(doc);
+  } catch (error) { $('title').textContent = 'Document unavailable'; status(error.message); }
+}
+
+const pad = $('pad'), ctx = pad.getContext('2d');
+let drawing = false, drawn = false;
+ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#111';
+const point = event => { const box = pad.getBoundingClientRect(); return [(event.clientX - box.left) * pad.width / box.width, (event.clientY - box.top) * pad.height / box.height]; };
+pad.addEventListener('pointerdown', event => { drawing = true; pad.setPointerCapture(event.pointerId); ctx.beginPath(); ctx.moveTo(...point(event)); });
+pad.addEventListener('pointermove', event => { if (!drawing) return; ctx.lineTo(...point(event)); ctx.stroke(); drawn = true; });
+pad.addEventListener('pointerup', () => { drawing = false; });
+$('clear').addEventListener('click', () => { ctx.clearRect(0, 0, pad.width, pad.height); drawn = false; });
+$('print').addEventListener('click', () => $('doc').contentWindow.print());
+$('sign').addEventListener('click', async () => {
+  const name = $('name').value.trim();
+  if (name.length < 2) return status('Type your full legal name.');
+  if (!drawn) return status('Draw your signature in the box.');
+  if (!$('consent').checked) return status('Check the box to agree to sign electronically.');
+  $('sign').disabled = true;
+  try {
+    const signed = await rpc('sign_signature_request', {request_id: requestId, typed_name: name, signature_png: pad.toDataURL('image/png'), user_agent: navigator.userAgent});
+    if (!signed) status('This document was already signed or withdrawn.');
+    await load();
+  } catch (error) { status(error.message); }
+  finally { $('sign').disabled = false; }
+});
+load();
+</script>
+</body>
+</html>
