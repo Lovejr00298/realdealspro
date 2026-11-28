@@ -78,7 +78,12 @@ jobs:
            page.locator('#discoveryResults').get_by_role('button', name='Find owner').click()
            expect(page.locator('#discoveryResults')).to_contain_text('Property record now lists SNF FUND LLC')
            expect(page.locator('#discoveryResults')).to_contain_text('Owner-name match: DOE JOHN')
-           expect(page.locator('#discoveryResults')).to_contain_text('skip-tracing')
+           expect(page.locator('#discoveryResults')).to_contain_text('skip-tracing lookup')
+           page.route('https://jfmedjpcvbwmkytdjbmm.supabase.co/functions/v1/skip-trace', lambda r: r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json',
+               body=json.dumps({'phones': [{'number': '8135550101', 'type': 'Mobile', 'dnc': True}], 'emails': ['doe@example.com']})))
+           page.once('dialog', lambda d: d.accept())
+           page.locator('#discoveryResults').get_by_role('button', name='Get phone and email').click()
+           expect(page.locator('#discoveryResults')).to_contain_text('(813) 555-0101 Mobile (Do Not Call) · doe@example.com')
            page.locator('#discoveryResults').get_by_role('button', name='Add to my cases').click()
            expect(page.locator('#discoveryResults').get_by_role('button', name='In my cases')).to_be_disabled()
            expect(page.locator('#surplusList')).to_contain_text('2023-0045')
