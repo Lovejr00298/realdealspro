@@ -194,7 +194,7 @@ footer a{flex:1;text-align:center;text-decoration:none;padding:12px;border-radiu
 </section>
 <section id="view-foreclosure" class="panel hidden">
 <h2>Foreclosure Watch</h2>
-<p>Track cases by county and court case number. Mark a sale completed after checking the court record.</p>
+<h3>Upcoming sales from clerk lists</h3><p class="small">Loaded automatically from official clerk sale lists. Sales can be canceled up to the sale time, so confirm each case in the court record.</p><label>County <select id="fcSalesCounty" onchange="renderForeclosureSales()"></select></label><p id="fcSalesStatus" role="status"></p><div id="fcSalesList"></div><h3>Your tracked cases</h3><p>Track cases by county and court case number. Mark a sale completed after checking the court record.</p>
 <form id="foreclosureWatchForm">
 <label>County <input name="county" required maxlength="50"></label>
 <label>Court case number <input name="caseNo" required maxlength="80"></label>
@@ -343,7 +343,7 @@ function save(){localStorage.setItem('rdp_leads_v3',JSON.stringify(leads));local
 let tab='dashboard';
 const tabs=[['dashboard','Dashboard'],['review','Deal Review'],['outreach','Outreach'],['prop-search','Property Search'],['parcel-search','Find Opportunities'],['leads','Property Leads'],['foreclosure','Foreclosure Watch'],['kanban','Kanban'],['vault','Vault'],['surplus','Sale Surplus'],['county-funds','County Unclaimed Funds'],['investors','Buyers'],['contracts','Contracts 📄'],['scripts','Scripts'],['settings','Settings']];
 function showTabs(){document.getElementById('tabs').innerHTML=tabs.map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}
-function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadNamedReport('unclaimed');if(t==='prop-search')propSearchShown();if(t==='review')ddRenderReview();if(t==='outreach')outreachShown()}
+function go(t){tab=t;showTabs();document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));document.getElementById('view-'+t).classList.remove('hidden');render();if(t==='foreclosure')loadForeclosureSales();if(t==='surplus'){if(!countyDiscovery)loadCountyDiscovery();loadNamedReport('surplus')}if(t==='county-funds')loadUnclaimedList();if(t==='prop-search')propSearchShown();if(t==='review')ddRenderReview();if(t==='outreach')outreachShown()}
 function runAutomation(){
  const county=document.getElementById('county').value;let found=0,hot=0,vaulted=0;
  leads.forEach(l=>{if(l.c!==county)return;found++;if(document.getElementById('autoScore').checked){l.score=scoreOf(l);l.status=labelOf(l.score)}if(scoreOf(l)>=80){hot++;if(document.getElementById('autoVault').checked&&!l.vault){l.vault=1;vaulted++}}});
@@ -613,7 +613,7 @@ for(const id of ['countyFundsBrowse','discoveryCounty']){
  }
 }
 function browseCountyFunds(){
- loadNamedReport('unclaimed');
+ loadUnclaimedList();
  const county=document.getElementById('countyFundsBrowse').value;
  const links=document.querySelectorAll('#countyFundsLinks [data-county]');
  let hasClerkLink=false;
@@ -690,6 +690,70 @@ foreclosureWatchForm.addEventListener('submit', event => {
   status.textContent = error.message;
  }
 });
+
+async function loadForeclosureSales() {
+ const status = document.getElementById('fcSalesStatus');
+ if (!countyDiscovery) {
+  status.textContent = 'Loading clerk sale lists…';
+  try {
+   const response = await fetch('./county-discovery.json', {cache: 'no-store'});
+   if (!response.ok) throw Error();
+   countyDiscovery = await response.json();
+  } catch {
+   status.textContent = 'Clerk sale lists are unavailable right now.';
+   return;
+  }
+ }
+ const select = document.getElementById('fcSalesCounty');
+ if (!select.options.length) select.innerHTML = Object.keys(countyDiscovery.foreclosureSales || {}).map(county => `<option>${escapeHtml(county)}</option>`).join('');
+ renderForeclosureSales();
+}
+
+function renderForeclosureSales() {
+ const status = document.getElementById('fcSalesStatus');
+ const list = document.getElementById('fcSalesList');
+ const county = document.getElementById('fcSalesCounty').value;
+ const result = countyDiscovery?.foreclosureSales?.[county];
+ list.replaceChildren();
+ if (!result || result.status !== 'ok') {
+  status.textContent = county ? county + ' sale list was unavailable on the last scan. Use the clerk website.' : 'No clerk sale lists are published yet.';
+  return;
+ }
+ const today = new Date().toISOString().slice(0, 10);
+ status.textContent = result.records.length + ' scheduled sales in ' + county + ' County.';
+ for (const sale of result.records) {
+  const row = document.createElement('div');
+  row.className = 'lead';
+  const title = document.createElement('b');
+  title.textContent = sale.saleDate + ' · ' + sale.caseNo;
+  const detail = document.createElement('div');
+  detail.className = 'small';
+  detail.textContent = [sale.plaintiff, sale.judgment ? 'Judgment ' + fmt(sale.judgment) : '', sale.address, sale.saleDate < today ? 'Sale date passed: check for surplus' : ''].filter(Boolean).join(' · ');
+  row.append(title, detail);
+  if (new URL(sale.source).protocol === 'https:') {
+   const link = document.createElement('a');
+   link.href = sale.source;
+   link.target = '_blank';
+   link.rel = 'noopener noreferrer';
+   link.textContent = 'Clerk sale list';
+   row.append(link, ' ');
+  }
+  const key = foreclosureCaseKey(county, sale.caseNo);
+  const track = document.createElement('button');
+  track.type = 'button';
+  track.textContent = foreclosureWatch[key] ? 'Tracked' : 'Track case';
+  track.disabled = Boolean(foreclosureWatch[key]);
+  track.addEventListener('click', () => {
+   const updated = {...foreclosureWatch, [key]: {county, caseNo: sale.caseNo, property: sale.address || 'See clerk sale list', source: sale.source, saleDate: sale.saleDate, stage: 'Sale scheduled'}};
+   localStorage.setItem(foreclosureWatchKey, JSON.stringify(updated));
+   foreclosureWatch = updated;
+   render();
+   renderForeclosureSales();
+  });
+  row.append(track);
+  list.append(row);
+ }
+}
 
 function renderForeclosureWatch() {
  const list = document.getElementById('foreclosureWatchList');
@@ -1086,6 +1150,61 @@ const cloudMsg=m=>{
  document.getElementById('cloudMsg').textContent=m;
  document.getElementById('modeBadge').textContent=m;
 };
+let privateLists=null;
+async function openPrivateLists(){
+ const rows=await cloudRequest('/rest/v1/report_keys?select=private_key&limit=1');
+ if(!rows[0])throw Error('Named county lists are not enabled for this account.');
+ const bytes=text=>Uint8Array.from(atob(text),c=>c.charCodeAt(0));
+ const key=await crypto.subtle.importKey('pkcs8',bytes(rows[0].private_key),{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+ const response=await fetch('./county-private.json',{cache:'no-store'});
+ if(!response.ok)throw Error('Named county lists have not been published yet.');
+ const sealed=await response.json();
+ const aes=await crypto.subtle.importKey('raw',await crypto.subtle.decrypt({name:'RSA-OAEP'},key,bytes(sealed.key)),'AES-GCM',false,['decrypt']);
+ return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(sealed.iv)},aes,bytes(sealed.data))));
+}
+async function loadUnclaimedList(){
+ const county=document.getElementById('countyFundsBrowse').value;
+ const output=document.getElementById('unclaimedNamedReport');
+ const request=Symbol();
+ output.namedRequest=request;
+ output.replaceChildren();
+ if(!county)return;
+ if(!cloudSession){output.textContent='Sign in under Settings to see named unclaimed-money lists.';return;}
+ output.textContent='Loading '+county+' unclaimed money…';
+ try{
+  await cloudRefresh();
+  privateLists ||= await openPrivateLists();
+  if(output.namedRequest!==request)return;
+  const result=privateLists.unclaimed?.[county];
+  if(!result){output.textContent=county+' does not publish an unclaimed-money list the app can read. Use the state lookup below or save a notice.';return;}
+  if(result.status!=='ok'){output.textContent=county+' list was unavailable on the last scan. Use the clerk website.';return;}
+  const records=[...result.records].sort((a,b)=>b.amount-a.amount);
+  const heading=document.createElement('h3');
+  heading.textContent=county+' unclaimed money · '+records.length+' names · '+fmt(records.reduce((sum,row)=>sum+row.amount,0));
+  const note=document.createElement('p');
+  note.className='small';
+  note.textContent='From the clerk\'s published list. Confirm the amount, claim deadline and claimant\'s identity with the clerk before contacting anyone. ';
+  const source=document.createElement('a');
+  source.href=records[0].source;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Open clerk list';
+  note.append(source);
+  const filter=document.createElement('input');filter.type='search';filter.placeholder='Filter by name, case or check number';
+  filter.setAttribute('aria-label',filter.placeholder);
+  const list=document.createElement('ul');
+  const renderRows=()=>{
+   const query=filter.value.trim().toLowerCase();
+   const items=records.filter(row=>[row.name,row.reference,row.category].some(value=>String(value||'').toLowerCase().includes(query))).slice(0,500);
+   list.replaceChildren(...items.map(row=>{
+    const item=document.createElement('li');
+    item.textContent=[row.name,fmt(row.amount),row.reference,row.category,row.date].filter(Boolean).join(' · ');
+    return item;
+   }));
+   if(!items.length){const item=document.createElement('li');item.textContent='No matching records.';list.append(item);}
+  };
+  filter.addEventListener('input',renderRows);
+  renderRows();
+  output.replaceChildren(heading,note,filter,list);
+ }catch(error){if(output.namedRequest===request)output.textContent=error.message||'Named lists are unavailable right now.';}
+}
 async function loadNamedReport(kind){
  const surplusReport=kind==='surplus';
  const countyField=document.getElementById(surplusReport?'discoveryCounty':'countyFundsBrowse');
@@ -1134,8 +1253,9 @@ async function loadNamedReport(kind){
  }catch{if(isCurrent())output.textContent='Marion names are temporarily unavailable. Use the clerk lookup or try again.';}
 }
 function refreshNamedReports(){
+ privateLists=null;
  loadNamedReport('surplus');
- loadNamedReport('unclaimed');
+ loadUnclaimedList();
 }
 function cloudSessionFrom(x){if(!x?.access_token||!x?.refresh_token||!x?.user?.id)throw Error('Incomplete sign-in response.');return {...x,expires_at:Number(x.expires_at)||Date.now()/1000+Number(x.expires_in||3600)}}
 async function cloudRequest(path,options={}){

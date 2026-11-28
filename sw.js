@@ -1,4 +1,4 @@
-const CACHE = 'realdealspro-v4';
+const CACHE = 'realdealspro-v5';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/property-search.js', '/deal-desk.js', '/outreach.js', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', event => {

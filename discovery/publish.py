@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sys
 
+from clerk_lists import foreclosure_sales, gather
 from run import run
 
 PUBLIC_FIELDS = ("taxDeedId", "reportedBalance", "source", "reportDate", "parcelId")
@@ -30,7 +31,7 @@ def public_batch(batch):
             counties[county]["stale"] = True
     if not any(result["status"] == "ok" and not result.get("stale") for result in counties.values()):
         raise RuntimeError("All county sources failed")
-    return {"fetchedAt": batch["fetchedAt"], "counties": counties}
+    return {"fetchedAt": batch["fetchedAt"], "counties": counties, "foreclosureSales": gather(foreclosure_sales())}
 
 
 if __name__ == "__main__":
